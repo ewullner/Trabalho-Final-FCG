@@ -18,6 +18,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
 
 // Headers abaixo são específicos de C++
 #include <map>
@@ -47,6 +48,15 @@
 // Headers locais, definidos na pasta "include/"
 #include "utils.h"
 #include "matrices.h"
+
+// Valores Pré-Definidos
+#define n_trees 250
+#define tree_types 1     // Tipos de árvore (objetos lidos)
+
+// Valores Tempo
+float dt = 0;
+float current_time = 0;
+float initial_time = 0;
 
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
@@ -220,13 +230,15 @@ bool g_UsePerspectiveProjection = true;
 bool g_ShowInfoText = true;
 
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
-GLuint g_GpuProgramID = 0;
-GLint g_model_uniform;
-GLint g_view_uniform;
-GLint g_projection_uniform;
-GLint g_object_id_uniform;
-GLint g_bbox_min_uniform;
-GLint g_bbox_max_uniform;
+GLuint vertex_shader_id;
+GLuint fragment_shader_id;
+GLuint GpuProgramID = 0;
+GLint model_uniform;
+GLint view_uniform;
+GLint projection_uniform;
+GLint object_id_uniform;
+GLint bbox_min_uniform;
+GLint bbox_max_uniform;
 
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
@@ -309,7 +321,10 @@ int main(int argc, char* argv[])
 
     // Carregamos duas imagens para serem utilizadas como textura
     LoadTextureImage("../../data/tc-earth_daymap_surface.jpg"); // TextureImage0
-    LoadTextureImage("../../data/Tex_0006_1_dds_DiffuseColor_Composite.jpg"); // TextureImageWeapon     
+    LoadTextureImage("../../data/tree.png"); // TextureImage1
+   // LoadTextureImage("../../data/grass.jpg"); // TextureImage2
+   // LoadTextureImage("../../data/Tex_0006_1_dds_DiffuseColor_Composite.jpg"); // TextureImageWeapon
+
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel spheremodel("../../data/sphere.obj");
@@ -327,6 +342,14 @@ int main(int argc, char* argv[])
     ObjModel weaponmodel("../../data/weapon.obj");
     ComputeNormals(&weaponmodel);
     BuildTrianglesAndAddToVirtualScene(&weaponmodel);
+
+    ObjModel treemodel("../../data/tree.obj");
+    ComputeNormals(&treemodel);
+    BuildTrianglesAndAddToVirtualScene(&treemodel);
+
+    ObjModel testemodel("../../data/teste.obj");
+    ComputeNormals(&testemodel);
+    BuildTrianglesAndAddToVirtualScene(&testemodel);
 
     if ( argc > 1 )
     {
@@ -347,7 +370,7 @@ int main(int argc, char* argv[])
 
     float camera_speed = 0.5f;
     float previousTime = (float)glfwGetTime();
-    glm::vec4 camera_position_c  = glm::vec4(0.0f,-0.88f,0.0f,1.0f); 
+    glm::vec4 camera_position_c  = glm::vec4(0.0f,-0.88f,0.0f,1.0f);
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -370,7 +393,7 @@ int main(int argc, char* argv[])
         {
             // Pedimos para a GPU utilizar o programa de GPU criado acima (contendo
             // os shaders de vértice e fragmentos).
-            glUseProgram(g_GpuProgramID);
+            glUseProgram(GpuProgramID);
 
             // Computamos a posição da câmera utilizando coordenadas esféricas.  As
             // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
@@ -386,7 +409,7 @@ int main(int argc, char* argv[])
             //glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,0.0f,1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
             glm::vec4 camera_view_vector = glm::vec4(cos(g_CameraPhi) * sin(g_CameraTheta), sin(g_CameraPhi), cos(g_CameraPhi) * cos(g_CameraTheta), 0.0f); // Vetor "view", sentido para onde a câmera está virada
             glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
-            glm::vec4 w = -camera_view_vector/norm(camera_view_vector); 
+            glm::vec4 w = -camera_view_vector/norm(camera_view_vector);
             glm::vec4 u = crossproduct(camera_up_vector, w);
             u = u/norm(u);
 
@@ -412,13 +435,18 @@ int main(int argc, char* argv[])
             // Enviamos as matrizes "view" e "projection" para a placa de vídeo
             // (GPU). Veja o arquivo "shader_vertex.glsl", onde estas são
             // efetivamente aplicadas em todos os pontos.
-            glUniformMatrix4fv(g_view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
-            glUniformMatrix4fv(g_projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
+            glUniformMatrix4fv(view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
+            glUniformMatrix4fv(projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
             #define SPHERE 0
             #define BUNNY  1
             #define PLANE  2
-            #define WEAPON 3   
+            #define WEAPON 3
+            #define TREE 4
+
+             // Animação baseada no tempo
+             current_time = glfwGetTime();
+             dt = current_time - initial_time;
 
             // Desenhamos o modelo da esfera
             /*model = Matrix_Translate(-1.0f,0.0f,0.0f)
@@ -432,27 +460,170 @@ int main(int argc, char* argv[])
             // Desenhamos o modelo do coelho
             /*model = Matrix_Translate(1.0f,0.0f,0.0f)
                 * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
-            glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(g_object_id_uniform, BUNNY);
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, BUNNY);
             DrawVirtualObject("the_bunny");*/
 
             // Desenhamos o plano do chão
-            model = Matrix_Translate(0.0f,-1.1f,0.0f);
+            /*
+            model = Matrix_Translate(0.0f,0.0f,0.0f)
+            * Matrix_Scale(8.0f,1.0f,8.0f);
             glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
             glUniform1i(g_object_id_uniform, PLANE);
+            DrawVirtualObject("SimpleGround_Plane.024");
+            */
+            model = Matrix_Translate(0.0f,-1.1f,0.0f);
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, PLANE);
             DrawVirtualObject("the_plane");
 
             glDisable(GL_DEPTH_TEST);
 
-            model = Matrix_Translate(0.8f, -0.8f, 0.0f) * Matrix_Rotate_Y(3.14159265*-0.89) * Matrix_Rotate_X(3.14159265*-0.05) * Matrix_Scale(2.0f, 2.0f, 1.0f); // Ajuste conforme necessário
+            /*model = Matrix_Translate(0.8f, -0.8f, 0.0f) * Matrix_Rotate_Y(3.14159265*-0.89) * Matrix_Rotate_X(3.14159265*-0.05) * Matrix_Scale(2.0f, 2.0f, 1.0f); // Ajuste conforme necessário
             glm::mat4 weapon_view = Matrix_Identity();
             glm::mat4 weapon_projection = Matrix_Identity();
 
-            glUniformMatrix4fv(g_model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-            glUniformMatrix4fv(g_view_uniform, 1, GL_FALSE, glm::value_ptr(weapon_view));
-            glUniformMatrix4fv(g_projection_uniform, 1, GL_FALSE, glm::value_ptr(weapon_projection));
-            glUniform1i(g_object_id_uniform, WEAPON);
-            DrawVirtualObject("the_weapon");
+            glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+            glUniformMatrix4fv(view_uniform, 1, GL_FALSE, glm::value_ptr(weapon_view));
+            glUniformMatrix4fv(projection_uniform, 1, GL_FALSE, glm::value_ptr(weapon_projection));
+            glUniform1i(object_id_uniform, WEAPON);
+            DrawVirtualObject("the_weapon");*/
+
+            model = Matrix_Translate(1.0f,-1.1f,0.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            model = Matrix_Translate(3.0f,-1.1f,5.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            model = Matrix_Translate(3.0f,-1.1f,6.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            model = Matrix_Translate(4.0f,-1.1f,2.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            model = Matrix_Translate(7.0f,-1.1f,6.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            model = Matrix_Translate(1.0f,-1.1f,2.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            model = Matrix_Translate(5.0f,-1.1f,5.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            model = Matrix_Translate(-2.0f,-1.1f,-6.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            model = Matrix_Translate(-4.0f,-1.1f,-2.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            model = Matrix_Translate(-3.0f,-1.1f,-1.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            model = Matrix_Translate(-1.0f,-1.1f,-8.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            model = Matrix_Translate(2.0f,-1.1f,-6.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            model = Matrix_Translate(-4.0f,-1.1f,2.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            model = Matrix_Translate(-8.0f,-1.1f,6.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            model = Matrix_Translate(-4.0f,-1.1f,-4.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            model = Matrix_Translate(-2.0f,-1.1f,-2.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            model = Matrix_Translate(-2.0f,-1.1f,-6.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            model = Matrix_Translate(2.0f,-1.1f,-1.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
+                ;
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            float random_x, random_z;
+
+
+            glm::vec3 rx[n_trees];
+            glm::vec3 rz[n_trees];
+
+           /*
+           for(int i=1; i<n_trees; i++){
+            random_x = rand() % 40 - 10;
+            random_z = rand() % 40 - 10;
+
+            rx[i].x = random_x;
+            rz[i].z = random_z;
+            printf("%d\n",i);
+            if(i==249)
+                break;
+           }
+
+            for(int i=0; i<n_trees; i++){
+             model = Matrix_Translate(rx[i].x, -1.1f, rz[i].z)
+             * Matrix_Scale(0.1f, 0.1f, 0.1f);
+             glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+             glUniform1i(object_id_uniform, TREE);
+             DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+           }
+           */
+
 
             glEnable(GL_DEPTH_TEST);
 
@@ -473,7 +644,7 @@ int main(int argc, char* argv[])
 
             if (W_pressed || S_pressed)
             {
-            // Computamos a posição da câmera utilizando coordenadas esféricas.  
+            // Computamos a posição da câmera utilizando coordenadas esféricas.
                 float r = g_CameraDistance;
                 float y = r*sin(g_CameraPhi);
                 float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
@@ -514,6 +685,8 @@ int main(int argc, char* argv[])
         // definidas anteriormente usando glfwSet*Callback() serão chamadas
         // pela biblioteca GLFW.
         glfwPollEvents();
+
+        initial_time = current_time;
     }
 
     // Finalizamos o uso dos recursos do sistema operacional
@@ -588,8 +761,8 @@ void DrawVirtualObject(const char* object_name)
     // com os parâmetros da axis-aligned bounding box (AABB) do modelo.
     glm::vec3 bbox_min = g_VirtualScene[object_name].bbox_min;
     glm::vec3 bbox_max = g_VirtualScene[object_name].bbox_max;
-    glUniform4f(g_bbox_min_uniform, bbox_min.x, bbox_min.y, bbox_min.z, 1.0f);
-    glUniform4f(g_bbox_max_uniform, bbox_max.x, bbox_max.y, bbox_max.z, 1.0f);
+    glUniform4f(bbox_min_uniform, bbox_min.x, bbox_min.y, bbox_min.z, 1.0f);
+    glUniform4f(bbox_max_uniform, bbox_max.x, bbox_max.y, bbox_max.z, 1.0f);
 
     // Pedimos para a GPU rasterizar os vértices dos eixos XYZ
     // apontados pelo VAO como linhas. Veja a definição de
@@ -635,26 +808,26 @@ void LoadShadersFromFiles()
     GLuint fragment_shader_id = LoadShader_Fragment("../../src/shader_fragment.glsl");
 
     // Deletamos o programa de GPU anterior, caso ele exista.
-    if ( g_GpuProgramID != 0 )
-        glDeleteProgram(g_GpuProgramID);
+    if ( GpuProgramID != 0 )
+        glDeleteProgram(GpuProgramID);
 
     // Criamos um programa de GPU utilizando os shaders carregados acima.
-    g_GpuProgramID = CreateGpuProgram(vertex_shader_id, fragment_shader_id);
+    GpuProgramID = CreateGpuProgram(vertex_shader_id, fragment_shader_id);
 
     // Buscamos o endereço das variáveis definidas dentro do Vertex Shader.
     // Utilizaremos estas variáveis para enviar dados para a placa de vídeo
     // (GPU)! Veja arquivo "shader_vertex.glsl" e "shader_fragment.glsl".
-    g_model_uniform      = glGetUniformLocation(g_GpuProgramID, "model"); // Variável da matriz "model"
-    g_view_uniform       = glGetUniformLocation(g_GpuProgramID, "view"); // Variável da matriz "view" em shader_vertex.glsl
-    g_projection_uniform = glGetUniformLocation(g_GpuProgramID, "projection"); // Variável da matriz "projection" em shader_vertex.glsl
-    g_object_id_uniform  = glGetUniformLocation(g_GpuProgramID, "object_id"); // Variável "object_id" em shader_fragment.glsl
-    g_bbox_min_uniform   = glGetUniformLocation(g_GpuProgramID, "bbox_min");
-    g_bbox_max_uniform   = glGetUniformLocation(g_GpuProgramID, "bbox_max");
+    model_uniform      = glGetUniformLocation(GpuProgramID, "model"); // Variável da matriz "model"
+    view_uniform       = glGetUniformLocation(GpuProgramID, "view"); // Variável da matriz "view" em shader_vertex.glsl
+    projection_uniform = glGetUniformLocation(GpuProgramID, "projection"); // Variável da matriz "projection" em shader_vertex.glsl
+    object_id_uniform  = glGetUniformLocation(GpuProgramID, "object_id"); // Variável "object_id" em shader_fragment.glsl
+    bbox_min_uniform   = glGetUniformLocation(GpuProgramID, "bbox_min");
+    bbox_max_uniform   = glGetUniformLocation(GpuProgramID, "bbox_max");
 
     // Variáveis em "shader_fragment.glsl" para acesso das imagens de textura
-    glUseProgram(g_GpuProgramID);
-    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImage0"), 0);
-    glUniform1i(glGetUniformLocation(g_GpuProgramID, "TextureImageWeapon"), 1);
+    glUseProgram(GpuProgramID);
+    glUniform1i(glGetUniformLocation(GpuProgramID, "TextureImage0"), 0);
+    glUniform1i(glGetUniformLocation(GpuProgramID, "TextureImageWeapon"), 1);
     glUseProgram(0);
 }
 
@@ -1026,7 +1199,7 @@ GLuint CreateGpuProgram(GLuint vertex_shader_id, GLuint fragment_shader_id)
         fprintf(stderr, "%s", output.c_str());
     }
 
-    // Os "Shader Objects" podem ser marcados para deleção após serem linkados 
+    // Os "Shader Objects" podem ser marcados para deleção após serem linkados
     glDeleteShader(vertex_shader_id);
     glDeleteShader(fragment_shader_id);
 
@@ -1118,7 +1291,7 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
 {
     if (isPaused) return;
-    
+
     static bool firstMouse = true;
     static double lastX = 400, lastY = 300; // Assumindo que a janela inicia com 800x600
 
@@ -1363,7 +1536,7 @@ void TextRendering_ShowFramesPerSecond(GLFWwindow* window)
     if ( ellapsed_seconds > 1.0f )
     {
         numchars = snprintf(buffer, 20, "%.2f fps", ellapsed_frames / ellapsed_seconds);
-    
+
         old_seconds = seconds;
         ellapsed_frames = 0;
     }

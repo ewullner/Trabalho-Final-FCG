@@ -7,6 +7,12 @@
 in vec4 position_world;
 in vec4 normal;
 
+// Posição do vértice atual no sistema de coordenadas local do modelo.
+in vec4 position_model;
+
+// Coordenadas de textura obtidas do arquivo OBJ (se existirem!)
+in vec2 texcoords;
+
 // Matrizes computadas no código C++ e enviadas para a GPU
 uniform mat4 model;
 uniform mat4 view;
@@ -17,12 +23,16 @@ uniform mat4 projection;
 #define BUNNY  1
 #define PLANE  2
 #define WEAPON 3
+#define TREE 4
 uniform int object_id;
 
 uniform vec4 bbox_min;
 uniform vec4 bbox_max;
 
-uniform sampler2D TextureWeapon;
+//uniform sampler2D TextureWeapon;
+uniform sampler2D TextureImage0;
+uniform sampler2D TextureImage1;
+uniform sampler2D TextureImage2;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
@@ -63,6 +73,14 @@ void main()
     vec3 Ka; // Refletância ambiente
     float q; // Expoente especular para o modelo de iluminação de Phong
 
+    // Coordenadas de textura U e V
+    float U = 0.0;
+    float V = 0.0;
+
+    float px = position_model.x;
+    float py = position_model.y;
+    float pz = position_model.z;
+
     if ( object_id == SPHERE )
     {
         // PREENCHA AQUI
@@ -83,19 +101,42 @@ void main()
     }
     else if ( object_id == PLANE )
     {
+        // Coordenadas de textura do plano, obtidas do arquivo OBJ
+
+    //    U = texcoords.x;
+    //    V = texcoords.y;
+
+    //    color.rgb = texture(TextureImage0, vec2(U,V)).rgb;
+    //    color.rgb = pow(color.rgb, vec3(1.0,1.0,1.0)/2.2);
+
+    //    return;
+
         // PREENCHA AQUI
         // Propriedades espectrais do plano
-        Kd = vec3(0.2,0.2,0.2);
-        Ks = vec3(0.3,0.3,0.3);
-        Ka = vec3(0.0,0.0,0.0);
+
+        Kd = vec3(0.2,0.3,0.5);
+        Ks = vec3(0.2,0.1,0.1);
+        Ka = vec3(0.3,0.4,0.2);
         q = 20.0;
+
     }
     else if ( object_id == WEAPON )
     {
         Kd = vec3(0.05, 0.05, 0.05);
         Ks = vec3(0.2, 0.2, 0.2);
         Ka = vec3(0.05, 0.05, 0.05);
-        q = 32.0;                
+        q = 32.0;
+    }
+    else if ( object_id == TREE)
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+
+        // Propriedades espectrais
+        Kd = texture(TextureImage1, vec2(U,V)).rgb;
+        Ks = vec3(0.0,0.0,0.0);
+        Ka = Kd/2.0;
+        q  = 1.0;
     }
     else // Objeto desconhecido = preto
     {
@@ -141,5 +182,6 @@ void main()
     // Cor final com correção gamma, considerando monitor sRGB.
     // Veja https://en.wikipedia.org/w/index.php?title=Gamma_correction&oldid=751281772#Windows.2C_Mac.2C_sRGB_and_TV.2Fvideo_standard_gammas
     color.rgb = pow(color.rgb, vec3(1.0,1.0,1.0)/2.2);
-} 
+}
+
 
