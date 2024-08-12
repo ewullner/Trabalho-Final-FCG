@@ -50,8 +50,7 @@
 #include "matrices.h"
 
 // Valores Pré-Definidos
-#define n_trees 250
-#define tree_types 1     // Tipos de árvore (objetos lidos)
+#define tree 300
 
 // Valores Tempo
 float dt = 0;
@@ -372,6 +371,22 @@ int main(int argc, char* argv[])
     float previousTime = (float)glfwGetTime();
     glm::vec4 camera_position_c  = glm::vec4(0.0f,-0.88f,0.0f,1.0f);
 
+    float random_x, random_z;
+
+
+            glm::vec3 rx[tree];
+            glm::vec3 rz[tree];
+
+
+           for(int i=1; i<tree; i++){
+            random_x = rand() % 40 - 10;
+            random_z = rand() % 40 - 10;
+
+            rx[i].x = random_x;
+            rz[i].z = random_z;
+            printf("%d\n",i);
+           }
+
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -488,7 +503,7 @@ int main(int argc, char* argv[])
             glUniformMatrix4fv(projection_uniform, 1, GL_FALSE, glm::value_ptr(weapon_projection));
             glUniform1i(object_id_uniform, WEAPON);
             DrawVirtualObject("the_weapon");*/
-
+         /*
             model = Matrix_Translate(1.0f,-1.1f,0.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
                 ;
             glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
@@ -597,35 +612,18 @@ int main(int argc, char* argv[])
             glUniform1i(object_id_uniform, TREE);
             DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
 
-            float random_x, random_z;
+            */
 
+            glEnable(GL_DEPTH_TEST);
 
-            glm::vec3 rx[n_trees];
-            glm::vec3 rz[n_trees];
-
-           /*
-           for(int i=1; i<n_trees; i++){
-            random_x = rand() % 40 - 10;
-            random_z = rand() % 40 - 10;
-
-            rx[i].x = random_x;
-            rz[i].z = random_z;
-            printf("%d\n",i);
-            if(i==249)
-                break;
-           }
-
-            for(int i=0; i<n_trees; i++){
+            for(int i=0; i<tree; i++){
              model = Matrix_Translate(rx[i].x, -1.1f, rz[i].z)
              * Matrix_Scale(0.1f, 0.1f, 0.1f);
              glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
              glUniform1i(object_id_uniform, TREE);
-             DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+             DrawVirtualObject("Default");
            }
-           */
 
-
-            glEnable(GL_DEPTH_TEST);
 
             // Imprimimos na tela os ângulos de Euler que controlam a rotação do
             // terceiro cubo.
@@ -827,7 +825,10 @@ void LoadShadersFromFiles()
     // Variáveis em "shader_fragment.glsl" para acesso das imagens de textura
     glUseProgram(GpuProgramID);
     glUniform1i(glGetUniformLocation(GpuProgramID, "TextureImage0"), 0);
-    glUniform1i(glGetUniformLocation(GpuProgramID, "TextureImageWeapon"), 1);
+    glUniform1i(glGetUniformLocation(GpuProgramID, "TextureImage1"), 1);
+    glUniform1i(glGetUniformLocation(GpuProgramID, "TextureImage2"), 2);
+    glUniform1i(glGetUniformLocation(GpuProgramID, "TextureImage3"), 3);
+    glUniform1i(glGetUniformLocation(GpuProgramID, "TextureImage4"), 4);
     glUseProgram(0);
 }
 
