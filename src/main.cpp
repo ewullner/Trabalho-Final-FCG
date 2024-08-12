@@ -321,7 +321,7 @@ int main(int argc, char* argv[])
     // Carregamos duas imagens para serem utilizadas como textura
     LoadTextureImage("../../data/tc-earth_daymap_surface.jpg"); // TextureImage0
     LoadTextureImage("../../data/tree.png"); // TextureImage1
-   // LoadTextureImage("../../data/grass.jpg"); // TextureImage2
+    LoadTextureImage("../../data/grass.jpg"); // TextureImage2
    // LoadTextureImage("../../data/Tex_0006_1_dds_DiffuseColor_Composite.jpg"); // TextureImageWeapon
 
 
@@ -504,113 +504,7 @@ int main(int argc, char* argv[])
             glUniform1i(object_id_uniform, WEAPON);
             DrawVirtualObject("the_weapon");*/
          /*
-            model = Matrix_Translate(1.0f,-1.1f,0.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-            model = Matrix_Translate(3.0f,-1.1f,5.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-            model = Matrix_Translate(3.0f,-1.1f,6.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-            model = Matrix_Translate(4.0f,-1.1f,2.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-            model = Matrix_Translate(7.0f,-1.1f,6.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-            model = Matrix_Translate(1.0f,-1.1f,2.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-            model = Matrix_Translate(5.0f,-1.1f,5.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-            model = Matrix_Translate(-2.0f,-1.1f,-6.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-            model = Matrix_Translate(-4.0f,-1.1f,-2.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-            model = Matrix_Translate(-3.0f,-1.1f,-1.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-            model = Matrix_Translate(-1.0f,-1.1f,-8.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-            model = Matrix_Translate(2.0f,-1.1f,-6.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-            model = Matrix_Translate(-4.0f,-1.1f,2.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-            model = Matrix_Translate(-8.0f,-1.1f,6.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-            model = Matrix_Translate(-4.0f,-1.1f,-4.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-            model = Matrix_Translate(-2.0f,-1.1f,-2.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-            model = Matrix_Translate(-2.0f,-1.1f,-6.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-            model = Matrix_Translate(2.0f,-1.1f,-1.0f) * Matrix_Scale(0.1f,0.1f,0.1f)
-                ;
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, TREE);
-            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+            model = Matrix_Translate(1.0f,-1.1f,0.0f) * Matrix_Scale(0.1f,0.1f,0.1f);
 
             */
 
