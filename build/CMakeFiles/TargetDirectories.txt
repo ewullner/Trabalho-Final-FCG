@@ -1,3 +1,0 @@
-C:/Users/Antonio/Desktop/GitHub/Trabalho-Final-FCG/build/CMakeFiles/main.dir
-C:/Users/Antonio/Desktop/GitHub/Trabalho-Final-FCG/build/CMakeFiles/edit_cache.dir
-C:/Users/Antonio/Desktop/GitHub/Trabalho-Final-FCG/build/CMakeFiles/rebuild_cache.dir

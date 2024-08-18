@@ -248,8 +248,9 @@ bool g_UsePerspectiveProjection = true;
 bool g_ShowInfoText = true;
 
 std::vector<glm::vec3> monster_positions;
-int num_monsters = 5; // Número de monstros que você deseja spawnar
-float spawn_radius = 5.0f; // Distância de spawn ao redor do jogador
+int num_monsters = 5;
+float min_spawn_radius = 1.5f; 
+float spawn_radius = 2.5f;
 float monster_speed = 0.1f; // Velocidade do monstro
 
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
@@ -430,7 +431,8 @@ int main(int argc, char* argv[])
 
     for (int i = 0; i < num_monsters; i++) {
         float random_angle = static_cast<float>(rand()) / RAND_MAX * 2 * PI;
-        float random_distance = static_cast<float>(rand()) / RAND_MAX * spawn_radius;
+        float random_distance = min_spawn_radius + static_cast<float>(rand()) / RAND_MAX * (spawn_radius - min_spawn_radius);
+
         glm::vec3 spawn_position = glm::vec3(
             x_posi + random_distance * cos(random_angle),
             -0.88f,
@@ -459,6 +461,9 @@ int main(int argc, char* argv[])
         // Pedimos para a GPU utilizar o programa de GPU criado acima (contendo
         // os shaders de vértice e fragmentos).
         glUseProgram(GpuProgramID);
+
+        currentTime = glfwGetTime();
+        deltaT = currentTime - previousTime;
 
         if (!isPaused)
         {
@@ -504,9 +509,6 @@ int main(int argc, char* argv[])
             // Para definição do field of view (FOV), veja slides 205-215 do documento Aula_09_Projecoes.pdf.
             float field_of_view = 3.141592 / 3.0f;
             projection = Matrix_Perspective(field_of_view, g_ScreenRatio, nearplane, farplane);*/
-
-             currentTime = glfwGetTime();
-             deltaT = currentTime - previousTime;
 
             for (int i = 0; i < num_monsters; i++) {
                 glm::vec3 direction = glm::normalize(glm::vec3(x_posi, -0.88f, z_posi) - monster_positions[i]);
@@ -693,7 +695,7 @@ int main(int argc, char* argv[])
             glUniform1i(object_id_uniform, BIRD);
             DrawVirtualObject("Bird");
 
-           model = Matrix_Translate(0.8f, -0.8f, 0.0f) * Matrix_Rotate_Y(3.14159265*-0.89) * Matrix_Rotate_X(3.14159265*-0.05) * Matrix_Scale(2.0f, 2.0f, 1.0f); // Ajuste conforme necessário
+           model = Matrix_Translate(0.8f, -0.8f, 0.0f) * Matrix_Rotate_Y(3.14159265*-0.89) * Matrix_Rotate_X(3.14159265*-0.05) * Matrix_Scale(2.0f, 2.0f, 1.0f);
             glm::mat4 weapon_view = Matrix_Identity();
             glm::mat4 weapon_projection = Matrix_Identity();
 

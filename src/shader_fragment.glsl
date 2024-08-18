@@ -167,9 +167,9 @@ void main()
 
         // Propriedades espectrais
         Kd = texture(TextureImage3, vec2(U,V)).rgb;
-        Ks = vec3(0.0,0.0,0.0);
+        Ks = vec3(0.8,0.8,0.8);
         Ka = Kd/2.0;
-        q  = 1.0;
+        q  = 32.0;
     }
     else // Objeto desconhecido = preto
     {
