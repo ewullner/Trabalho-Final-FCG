@@ -30,6 +30,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <algorithm>
+#include <windows.h>
 
 // Headers das bibliotecas OpenGL
 #include <glad/glad.h>   // Criação de contexto OpenGL 3.3
@@ -48,14 +49,29 @@
 // Headers locais, definidos na pasta "include/"
 #include "utils.h"
 #include "matrices.h"
+#include "collisions.h"
 
 // Valores Pré-Definidos
 #define tree 300
 
+#define PI 3.14159265359
+
 // Valores Tempo
-float dt = 0;
-float current_time = 0;
-float initial_time = 0;
+float deltaT = 0;
+float currentTime = 0;
+float previousTime = 0;
+
+// Variável Velocidade do Boneco
+
+float velocidade = 0.1f;
+
+// Valores para controlar colisão
+float x_posi = 2.0f;
+float y1 = 0;
+float z_posi = 2.0f;
+float ant_x1 = x_posi;
+float ant_z1 = z_posi;
+glm::vec4 ControlKeys(GLFWwindow* window, float x, float y, float z);
 
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
@@ -162,9 +178,12 @@ void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
 void TextRendering_ShowPaused(GLFWwindow* window);
 
+glm::vec4 BezierCurve(glm::vec4 bezierP0,glm::vec4 bezierP1,glm::vec4 bezierP2,glm::vec4 bezierP3, float t);
+
 // Definimos uma estrutura que armazenará dados necessários para renderizar
 // cada objeto da cena virtual.
-struct SceneObject
+
+/*struct SceneObject
 {
     std::string  name;        // Nome do objeto
     size_t       first_index; // Índice do primeiro vértice dentro do vetor indices[] definido em BuildTrianglesAndAddToVirtualScene()
@@ -173,7 +192,7 @@ struct SceneObject
     GLuint       vertex_array_object_id; // ID do VAO onde estão armazenados os atributos do modelo
     glm::vec3    bbox_min; // Axis-Aligned Bounding Box do objeto
     glm::vec3    bbox_max;
-};
+};*/
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -210,7 +229,7 @@ bool isPaused = false;
 // usuário através do mouse (veja função CursorPosCallback()). A posição
 // efetiva da câmera é calculada dentro da função main(), dentro do loop de
 // renderização.
-float g_CameraTheta = 0.0f; // Ângulo no plano ZX em relação ao eixo Z
+float g_CameraTheta = -0.0f; // Ângulo no plano ZX em relação ao eixo Z
 float g_CameraPhi = 0.0f;   // Ângulo em relação ao eixo Y
 float g_CameraDistance = 3.5f; // Distância da câmera para a origem
 
@@ -322,7 +341,7 @@ int main(int argc, char* argv[])
     LoadTextureImage("../../data/tc-earth_daymap_surface.jpg"); // TextureImage0
     LoadTextureImage("../../data/tree.png"); // TextureImage1
     LoadTextureImage("../../data/grass.jpg"); // TextureImage2
-   // LoadTextureImage("../../data/Tex_0006_1_dds_DiffuseColor_Composite.jpg"); // TextureImageWeapon
+    LoadTextureImage("../../data/Tex_0006_1_dds_DiffuseColor_Composite.jpg"); // TextureImageWeapon
 
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
@@ -350,6 +369,10 @@ int main(int argc, char* argv[])
     ComputeNormals(&testemodel);
     BuildTrianglesAndAddToVirtualScene(&testemodel);
 
+    ObjModel birdmodel("../../data/bird.obj");
+    ComputeNormals(&birdmodel);
+    BuildTrianglesAndAddToVirtualScene(&birdmodel);
+
     if ( argc > 1 )
     {
         ObjModel model(argv[1]);
@@ -368,24 +391,33 @@ int main(int argc, char* argv[])
     glFrontFace(GL_CCW);
 
     float camera_speed = 0.5f;
-    float previousTime = (float)glfwGetTime();
+    //float previousTime = (float)glfwGetTime();
     glm::vec4 camera_position_c  = glm::vec4(0.0f,-0.88f,0.0f,1.0f);
+    //glm::vec4 camera_position_c    = glm::vec4(0.0f,0.0f,0.0f,1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
+    glm::vec4 camera_view_vector = glm::vec4(x_posi, 2.5f, z_posi, 1.0f) - glm::vec4(62.26f, 15.0f, -49.71f, 1.0f);
+    glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f);
+
+    glm::vec3 position_tree[tree];
 
     float random_x, random_z;
 
+        for(int i=1; i<tree; i++){
 
-            glm::vec3 rx[tree];
-            glm::vec3 rz[tree];
-
-
-           for(int i=1; i<tree; i++){
             random_x = rand() % 40 - 10;
             random_z = rand() % 40 - 10;
 
-            rx[i].x = random_x;
-            rz[i].z = random_z;
+
+            position_tree[i].x = random_x;
+            position_tree[i].z = random_z;
             printf("%d\n",i);
-           }
+        }
+
+        glm::vec4 bezierP0 = glm::vec4(15.0f,5.0f,15.0f,1.0f);
+        glm::vec4 bezierP1 = glm::vec4(10.0f,5.0f,10.0f,1.0f);
+        glm::vec4 bezierP2 = glm::vec4(10.0f,5.0f,10.0f,1.0f);
+        glm::vec4 bezierP3 = glm::vec4(15.0f,5.0f,15.0f,1.0f);
+
+        float previous_interval = sin(float(glfwGetTime())*0.2f);
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -404,11 +436,18 @@ int main(int argc, char* argv[])
         // e também resetamos todos os pixels do Z-buffer (depth buffer).
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // Pedimos para a GPU utilizar o programa de GPU criado acima (contendo
+        // os shaders de vértice e fragmentos).
+        glUseProgram(GpuProgramID);
+
         if (!isPaused)
         {
             // Pedimos para a GPU utilizar o programa de GPU criado acima (contendo
             // os shaders de vértice e fragmentos).
-            glUseProgram(GpuProgramID);
+//            glUseProgram(GpuProgramID);
+
+            ant_x1 = x_posi;
+            ant_z1 = z_posi;
 
             // Computamos a posição da câmera utilizando coordenadas esféricas.  As
             // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
@@ -422,15 +461,87 @@ int main(int argc, char* argv[])
             // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
             // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
             //glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,0.0f,1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
-            glm::vec4 camera_view_vector = glm::vec4(cos(g_CameraPhi) * sin(g_CameraTheta), sin(g_CameraPhi), cos(g_CameraPhi) * cos(g_CameraTheta), 0.0f); // Vetor "view", sentido para onde a câmera está virada
-            glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
-            glm::vec4 w = -camera_view_vector/norm(camera_view_vector);
-            glm::vec4 u = crossproduct(camera_up_vector, w);
-            u = u/norm(u);
+            //glm::vec4 camera_view_vector = glm::vec4(cos(g_CameraPhi) * sin(g_CameraTheta), sin(g_CameraPhi), cos(g_CameraPhi) * cos(g_CameraTheta), 0.0f); // Vetor "view", sentido para onde a câmera está virada
+            //glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
+            //glm::vec4 w = -camera_view_vector/norm(camera_view_vector);
+            //glm::vec4 u = crossproduct(camera_up_vector, w);
+            //u = u/norm(u);
 
             // Computamos a matriz "View" utilizando os parâmetros da câmera para
             // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-            glm::mat4 view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
+            //glm::mat4 view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
+
+            /*
+            // Agora computamos a matriz de Projeção.
+            glm::mat4 projection;
+
+            // Note que, no sistema de coordenadas da câmera, os planos near e far
+            // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
+            float nearplane = -0.1f;  // Posição do "near plane"
+            float farplane  = -10.0f; // Posição do "far plane"
+
+            // Projeção Perspectiva.
+            // Para definição do field of view (FOV), veja slides 205-215 do documento Aula_09_Projecoes.pdf.
+            float field_of_view = 3.141592 / 3.0f;
+            projection = Matrix_Perspective(field_of_view, g_ScreenRatio, nearplane, farplane);*/
+
+             currentTime = glfwGetTime();
+             deltaT = currentTime - previousTime;
+            //previousTime = currentTime;
+
+
+            /*
+            if (W_pressed || S_pressed)
+            {
+            // Computamos a posição da câmera utilizando coordenadas esféricas.
+                float r = g_CameraDistance;
+                float y = r*sin(g_CameraPhi);
+                float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
+                float x = r*cos(g_CameraPhi)*sin(g_CameraTheta);
+
+               // glm::vec4 camera_view_vector = glm::vec4(x, 0.0f, z, 0.0f); // Vetor "view" com componente Y = 0
+
+                // Normaliza o vetor de visão
+              //  camera_view_vector = glm::normalize(camera_view_vector);
+
+                // Atualizar a posição do personagem com base nas teclas W e S
+                if (W_pressed){
+                //    camera_position_c += camera_view_vector * camera_speed * deltaT;
+                 //  deltaT = 0;
+                //   x_posi =  x_posi + (deltaT*velocidade) * x;
+                //   z_posi =  z_posi + (deltaT*velocidade) * z;
+                   camera_position_c = glm::vec4(x_posi + (deltaT*velocidade) * x, -0.88f, z_posi + (deltaT*velocidade) * z, 1.0f);
+               //    camera_view_vector = glm::vec4(x_posi, -y, z_posi, 0.0f);
+
+                }
+                if (S_pressed){
+               //     camera_position_c -= camera_view_vector * camera_speed * deltaT;
+                  camera_position_c = glm::vec4(x_posi - (deltaT*velocidade) * x, -0.88f, z_posi - (deltaT*velocidade) * z, 1.0f);
+               //   camera_view_vector = glm::vec4(x_posi, -y, z_posi, 0.0f);
+                }
+
+            }
+
+            if (A_pressed){
+           // camera_position_c += -u * camera_speed * deltaT;
+                  camera_position_c = glm::vec4(x_posi + (deltaT*velocidade) * z, -0.88f, z_posi - (deltaT*velocidade) * x, 1.0f);
+             //     camera_view_vector = glm::vec4(x_posi, -y, z_posi, 0.0f);
+
+            }
+
+            if (D_pressed){
+              //  camera_position_c += u * camera_speed * deltaT;
+                  camera_position_c = glm::vec4(x_posi - (deltaT*velocidade) * z, -0.88f, z_posi + (deltaT*velocidade) * x, 1.0f);
+             //     camera_view_vector = glm::vec4(x_posi, -y, z_posi, 0.0f);
+            }*/
+
+
+            camera_position_c = ControlKeys(window, x, -0.88f, z);
+            camera_view_vector = glm::vec4(x, y, z, 0.0f);
+
+            glm::mat4 view = Matrix_Camera_View(camera_position_c,
+                                            camera_view_vector,
+                                            camera_up_vector);
 
             // Agora computamos a matriz de Projeção.
             glm::mat4 projection;
@@ -445,23 +556,21 @@ int main(int argc, char* argv[])
             float field_of_view = 3.141592 / 3.0f;
             projection = Matrix_Perspective(field_of_view, g_ScreenRatio, nearplane, farplane);
 
+            glUniformMatrix4fv(view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
+            glUniformMatrix4fv(projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
+
             glm::mat4 model = Matrix_Identity(); // Transformação identidade de modelagem
 
             // Enviamos as matrizes "view" e "projection" para a placa de vídeo
             // (GPU). Veja o arquivo "shader_vertex.glsl", onde estas são
             // efetivamente aplicadas em todos os pontos.
-            glUniformMatrix4fv(view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
-            glUniformMatrix4fv(projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
             #define SPHERE 0
             #define BUNNY  1
             #define PLANE  2
             #define WEAPON 3
             #define TREE 4
-
-             // Animação baseada no tempo
-             current_time = glfwGetTime();
-             dt = current_time - initial_time;
+            #define BIRD 5
 
             // Desenhamos o modelo da esfera
             /*model = Matrix_Translate(-1.0f,0.0f,0.0f)
@@ -494,7 +603,57 @@ int main(int argc, char* argv[])
 
             glDisable(GL_DEPTH_TEST);
 
-            /*model = Matrix_Translate(0.8f, -0.8f, 0.0f) * Matrix_Rotate_Y(3.14159265*-0.89) * Matrix_Rotate_X(3.14159265*-0.05) * Matrix_Scale(2.0f, 2.0f, 1.0f); // Ajuste conforme necessário
+            glEnable(GL_DEPTH_TEST);
+
+            for(int i=0; i<tree; i++){
+             //if(position_tree[i].x > 0.1f && position_tree[i].x < -0.1f && position_tree[i].z > 0.1f && position_tree[i].z < -0.51){
+              model = Matrix_Translate(position_tree[i].x, -1.1f, position_tree[i].z)
+              * Matrix_Scale(0.1f, 0.1f, 0.1f);
+              glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+              glUniform1i(object_id_uniform, TREE);
+              DrawVirtualObject("Default");
+
+             if(PontoCubo(camera_position_c, g_VirtualScene["Default"], position_tree[i],0.1f,3.5f)){
+                x_posi = ant_x1;
+                z_posi = ant_z1;
+             }
+             //}
+           }
+
+            float interval = sin(currentTime*0.2f);
+            float turnAux, turnAux2 = PI;
+
+            if(interval < 0.0f)
+                interval *= -1.0f;
+
+            float turn = interval - previous_interval;
+
+            if(turn < 0.0f){
+            turnAux2 = 0.0f;
+            if((interval > 0.0) && (interval < 0.07))
+                turnAux =  PI;
+            if((interval > 0.2) && (interval < 0.5))
+                turnAux =  0.0f ;
+            else if ((interval > 0.5) && (interval < 1.0))
+                turnAux = PI;
+            }
+            else{
+               if((interval > 0.0) && (interval < 0.5))
+                 turnAux =  PI;
+                else if ((interval > 0.5) && (interval < 1.0))
+                  turnAux = 0.0f;
+            }
+
+            glm::vec4 birdPosition = BezierCurve(bezierP0, bezierP1, bezierP2, bezierP3, interval);
+
+            model = Matrix_Translate(birdPosition.x,0.88f,birdPosition.z)
+                 * Matrix_Scale(0.9f,0.9f,0.9f)
+                 * Matrix_Rotate_Y(turnAux);
+            glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+            glUniform1i(object_id_uniform, BIRD);
+            DrawVirtualObject("Bird");
+
+           model = Matrix_Translate(0.8f, -0.8f, 0.0f) * Matrix_Rotate_Y(3.14159265*-0.89) * Matrix_Rotate_X(3.14159265*-0.05) * Matrix_Scale(2.0f, 2.0f, 1.0f); // Ajuste conforme necessário
             glm::mat4 weapon_view = Matrix_Identity();
             glm::mat4 weapon_projection = Matrix_Identity();
 
@@ -502,22 +661,9 @@ int main(int argc, char* argv[])
             glUniformMatrix4fv(view_uniform, 1, GL_FALSE, glm::value_ptr(weapon_view));
             glUniformMatrix4fv(projection_uniform, 1, GL_FALSE, glm::value_ptr(weapon_projection));
             glUniform1i(object_id_uniform, WEAPON);
-            DrawVirtualObject("the_weapon");*/
-         /*
+            DrawVirtualObject("the_weapon");
+
             model = Matrix_Translate(1.0f,-1.1f,0.0f) * Matrix_Scale(0.1f,0.1f,0.1f);
-
-            */
-
-            glEnable(GL_DEPTH_TEST);
-
-            for(int i=0; i<tree; i++){
-             model = Matrix_Translate(rx[i].x, -1.1f, rz[i].z)
-             * Matrix_Scale(0.1f, 0.1f, 0.1f);
-             glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-             glUniform1i(object_id_uniform, TREE);
-             DrawVirtualObject("Default");
-           }
-
 
             // Imprimimos na tela os ângulos de Euler que controlam a rotação do
             // terceiro cubo.
@@ -530,36 +676,6 @@ int main(int argc, char* argv[])
             // por segundo (frames per second).
             TextRendering_ShowFramesPerSecond(window);
 
-            float currentTime = (float)glfwGetTime();
-            float deltaT = currentTime - previousTime;
-            previousTime = currentTime;
-
-            if (W_pressed || S_pressed)
-            {
-            // Computamos a posição da câmera utilizando coordenadas esféricas.
-                float r = g_CameraDistance;
-                float y = r*sin(g_CameraPhi);
-                float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
-                float x = r*cos(g_CameraPhi)*sin(g_CameraTheta);
-
-                glm::vec4 camera_view_vector = glm::vec4(x, 0.0f, z, 0.0f); // Vetor "view" com componente Y = 0
-
-                // Normaliza o vetor de visão
-                camera_view_vector = glm::normalize(camera_view_vector);
-
-                // Atualizar a posição do personagem com base nas teclas W e S
-                if (W_pressed)
-                    camera_position_c += camera_view_vector * camera_speed * deltaT;
-
-                if (S_pressed)
-                    camera_position_c -= camera_view_vector * camera_speed * deltaT;
-            }
-
-            if (A_pressed)
-                camera_position_c += -u * camera_speed * deltaT;
-
-            if (D_pressed)
-                camera_position_c += u * camera_speed * deltaT;
         }
         else
             TextRendering_ShowPaused(window);
@@ -578,7 +694,7 @@ int main(int argc, char* argv[])
         // pela biblioteca GLFW.
         glfwPollEvents();
 
-        initial_time = current_time;
+        previousTime = currentTime;
     }
 
     // Finalizamos o uso dos recursos do sistema operacional
@@ -586,6 +702,37 @@ int main(int argc, char* argv[])
 
     // Fim do programa
     return 0;
+}
+glm::vec4 ControlKeys(GLFWwindow* window, float x, float y, float z){
+    if (S_pressed){
+        x_posi = x_posi - (deltaT*velocidade) * x;
+        z_posi = z_posi - (deltaT*velocidade) * z;
+    }
+
+    if (W_pressed){
+        x_posi = x_posi + (deltaT*velocidade) * x;
+        z_posi = z_posi + (deltaT*velocidade) * z;
+    }
+
+    if (A_pressed){
+        x_posi = x_posi + (deltaT*velocidade) * z;
+        z_posi = z_posi - (deltaT*velocidade) * x;
+    }
+
+    if (D_pressed){
+        x_posi = x_posi - (deltaT*velocidade) * z;
+        z_posi = z_posi + (deltaT*velocidade) * x;
+    }
+
+    return glm::vec4(x_posi, -0.88f, z_posi, 1.0f);
+}
+
+glm::vec4 BezierCurve(glm::vec4 bezierP0,glm::vec4 bezierP1,glm::vec4 bezierP2,glm::vec4 bezierP3, float t){
+
+    return glm::vec4((pow((1.0f - t),3) * bezierP0.x + 3 * t * (pow((1.0f - t ), 2)) * bezierP1.x + 3 * (pow(t, 2)) * (1.0f - t) * bezierP2.x + pow(t, 3) * bezierP3.x),
+                     (pow((1.0f - t),3) * bezierP0.y  + 3 * t *( pow((1.0f-t), 2)) * bezierP1.y + 3 * (pow(t, 2)) * (1.0f - t ) * bezierP2.y + pow(t, 3) * bezierP3.y),
+                     (pow((1.0f - t), 3) * bezierP0.z + 3 * t * (pow((1.0f - t), 2)) * bezierP1.z + 3 * (pow(t, 2)) * (1.0f - t) * bezierP2.z + pow(t,3) * bezierP3.z),
+                     1.0f);
 }
 
 // Função que carrega uma imagem para ser utilizada como textura
