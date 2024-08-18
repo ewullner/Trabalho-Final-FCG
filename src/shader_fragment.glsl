@@ -25,6 +25,7 @@ uniform mat4 projection;
 #define WEAPON 3
 #define TREE 4
 #define BIRD 5
+#define MONSTER 6
 uniform int object_id;
 
 uniform vec4 bbox_min;
@@ -155,6 +156,17 @@ void main()
         V = texcoords.y;
 
         Kd = vec3(0.996, 0.113, 0.093);
+        Ks = vec3(0.0,0.0,0.0);
+        Ka = Kd/2.0;
+        q  = 1.0;
+    }
+        else if ( object_id == MONSTER)
+    {
+        U = texcoords.x;
+        V = texcoords.y;
+
+        // Propriedades espectrais
+        Kd = texture(TextureImage3, vec2(U,V)).rgb;
         Ks = vec3(0.0,0.0,0.0);
         Ka = Kd/2.0;
         q  = 1.0;
