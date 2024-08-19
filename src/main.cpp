@@ -247,6 +247,12 @@ bool g_UsePerspectiveProjection = true;
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
 
+std::vector<glm::vec3> monster_positions;
+int num_monsters = 5;
+float min_spawn_radius = 1.5f;
+float spawn_radius = 2.5f;
+float monster_speed = 0.1f; // Velocidade do monstro
+
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint vertex_shader_id;
 GLuint fragment_shader_id;
@@ -341,8 +347,8 @@ int main(int argc, char* argv[])
     LoadTextureImage("../../data/tc-earth_daymap_surface.jpg"); // TextureImage0
     LoadTextureImage("../../data/tree.png"); // TextureImage1
     LoadTextureImage("../../data/grass.jpg"); // TextureImage2
-    LoadTextureImage("../../data/Tex_0006_1_dds_DiffuseColor_Composite.jpg"); // TextureImageWeapon
-
+    LoadTextureImage("../../data/monster.jpg"); // TextureImage3
+    LoadTextureImage("../../data/tree2.png"); // TextureImage4
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel spheremodel("../../data/sphere.obj");
@@ -373,6 +379,10 @@ int main(int argc, char* argv[])
     ComputeNormals(&birdmodel);
     BuildTrianglesAndAddToVirtualScene(&birdmodel);
 
+    ObjModel monstermodel("../../data/monster.obj");
+    ComputeNormals(&monstermodel);
+    BuildTrianglesAndAddToVirtualScene(&monstermodel);
+
     if ( argc > 1 )
     {
         ObjModel model(argv[1]);
@@ -398,6 +408,7 @@ int main(int argc, char* argv[])
     glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f);
 
     glm::vec3 position_tree[tree];
+    glm::vec3 position_tree2[tree];
 
     float random_x, random_z;
 
@@ -412,12 +423,35 @@ int main(int argc, char* argv[])
             printf("%d\n",i);
         }
 
-        glm::vec4 bezierP0 = glm::vec4(15.0f,5.0f,15.0f,1.0f);
+         for(int i=1; i<tree; i++){
+
+            random_x = rand() % 40 - 10;
+            random_z = rand() % 40 - 10;
+
+
+            position_tree2[i].x = random_x;
+            position_tree2[i].z = random_z;
+            printf("%d\n",i);
+        }
+
+        glm::vec4 bezierP0 = glm::vec4(0.0f,5.0f,0.0f,1.0f);
         glm::vec4 bezierP1 = glm::vec4(10.0f,5.0f,10.0f,1.0f);
         glm::vec4 bezierP2 = glm::vec4(10.0f,5.0f,10.0f,1.0f);
-        glm::vec4 bezierP3 = glm::vec4(15.0f,5.0f,15.0f,1.0f);
+        glm::vec4 bezierP3 = glm::vec4(0.0f,5.0f,0.0f,1.0f);
 
-        float previous_interval = sin(float(glfwGetTime())*0.2f);
+        float previous_intervalo = sin(float(glfwGetTime())*0.2f);
+
+    for (int i = 0; i < num_monsters; i++) {
+        float random_angle = static_cast<float>(rand()) / RAND_MAX * 2 * PI;
+        float random_distance = min_spawn_radius + static_cast<float>(rand()) / RAND_MAX * (spawn_radius - min_spawn_radius);
+
+        glm::vec3 spawn_position = glm::vec3(
+            x_posi + random_distance * cos(random_angle),
+            -0.88f,
+            z_posi + random_distance * sin(random_angle)
+        );
+        monster_positions.push_back(spawn_position);
+    }
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -439,6 +473,9 @@ int main(int argc, char* argv[])
         // Pedimos para a GPU utilizar o programa de GPU criado acima (contendo
         // os shaders de vértice e fragmentos).
         glUseProgram(GpuProgramID);
+
+        currentTime = glfwGetTime();
+        deltaT = currentTime - previousTime;
 
         if (!isPaused)
         {
@@ -485,8 +522,30 @@ int main(int argc, char* argv[])
             float field_of_view = 3.141592 / 3.0f;
             projection = Matrix_Perspective(field_of_view, g_ScreenRatio, nearplane, farplane);*/
 
-             currentTime = glfwGetTime();
-             deltaT = currentTime - previousTime;
+            for (int i = 0; i < num_monsters; i++) {
+                glm::vec3 direction = glm::normalize(glm::vec3(x_posi, -0.88f, z_posi) - monster_positions[i]);
+                monster_positions[i] += direction * monster_speed * deltaT;
+
+                float angle = atan2(direction.x, direction.z);
+
+                angle += glm::radians(90.0f);
+
+                // Verifica se o jogador colidiu com o monstro
+                if (PontoCubo(glm::vec4(x_posi, -0.88f, z_posi, 1.0f), g_VirtualScene["the_monster"], monster_positions[i], 0.1f, 0.1f)){
+              //    if(CuboCubo(glm::vec4(x_posi, -0.88f, z_posi, 1.0f), g_VirtualScene["the_monster"], monster_positions[i],0.1f)){
+
+                    // Fecha o jogo se houver colisão
+                    glfwSetWindowShouldClose(window, GL_TRUE);
+                }
+
+                // Desenhar o monstro na posição atual
+                glm::mat4 model = Matrix_Translate(monster_positions[i].x, monster_positions[i].y, monster_positions[i].z)
+                                * Matrix_Rotate_Y(angle) // Aplica a rotação no eixo Y
+                                * Matrix_Scale(0.1f, 0.1f, 0.1f); // Escala do monstro
+                glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+                glUniform1i(object_id_uniform, 6); // Supondo que 6 é o ID para "the_monster"
+                DrawVirtualObject("the_monster");
+            }
             //previousTime = currentTime;
 
 
@@ -571,6 +630,8 @@ int main(int argc, char* argv[])
             #define WEAPON 3
             #define TREE 4
             #define BIRD 5
+            #define MONSTER 6
+            #define TREE2 7
 
             // Desenhamos o modelo da esfera
             /*model = Matrix_Translate(-1.0f,0.0f,0.0f)
@@ -601,61 +662,76 @@ int main(int argc, char* argv[])
             glUniform1i(object_id_uniform, PLANE);
             DrawVirtualObject("the_plane");
 
-            glDisable(GL_DEPTH_TEST);
-
-            glEnable(GL_DEPTH_TEST);
-
             for(int i=0; i<tree; i++){
              //if(position_tree[i].x > 0.1f && position_tree[i].x < -0.1f && position_tree[i].z > 0.1f && position_tree[i].z < -0.51){
               model = Matrix_Translate(position_tree[i].x, -1.1f, position_tree[i].z)
               * Matrix_Scale(0.1f, 0.1f, 0.1f);
               glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
               glUniform1i(object_id_uniform, TREE);
-              DrawVirtualObject("Default");
+              DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
 
-             if(PontoCubo(camera_position_c, g_VirtualScene["Default"], position_tree[i],0.1f,3.5f)){
+             if(PontoCubo(camera_position_c, g_VirtualScene["Tree_Spruce_small_01_Cylinder_016"], position_tree[i],0.1f,3.5f)){
                 x_posi = ant_x1;
                 z_posi = ant_z1;
              }
              //}
            }
 
-            float interval = sin(currentTime*0.2f);
+           for(int i=0; i<tree; i++){
+             //if(position_tree[i].x > 0.1f && position_tree[i].x < -0.1f && position_tree[i].z > 0.1f && position_tree[i].z < -0.51){
+              model = Matrix_Translate(position_tree2[i].x, -1.1f, position_tree2[i].z)
+              * Matrix_Scale(0.1f, 0.1f, 0.1f);
+
+           //   if(CuboCubo(camera_position_c, g_VirtualScene["Default"], position_tree2[i],0.8f)){
+           //     x_posi = ant_x1;
+           //     z_posi = ant_z1;
+            // }
+
+              glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+              glUniform1i(object_id_uniform, TREE2);
+              DrawVirtualObject("Default");
+             //}
+           }
+
+
+            float intervalo = sin(currentTime*0.2f);
             float turnAux, turnAux2 = PI;
 
-            if(interval < 0.0f)
-                interval *= -1.0f;
+            if(intervalo < 0.0f)
+                intervalo *= -1.0f;
 
-            float turn = interval - previous_interval;
+            float turn = intervalo - previous_intervalo;
 
             if(turn < 0.0f){
             turnAux2 = 0.0f;
-            if((interval > 0.0) && (interval < 0.07))
+            if ((intervalo > 0.0) && (intervalo < 0.07))
                 turnAux =  PI;
-            if((interval > 0.2) && (interval < 0.5))
+            if ((intervalo > 0.2) && (intervalo < 0.5))
                 turnAux =  0.0f ;
-            else if ((interval > 0.5) && (interval < 1.0))
+            else if ((intervalo > 0.5) && (intervalo < 1.0))
                 turnAux = PI;
             }
             else{
-               if((interval > 0.0) && (interval < 0.5))
+               if((intervalo > 0.0) && (intervalo < 0.5))
                  turnAux =  PI;
-                else if ((interval > 0.5) && (interval < 1.0))
+                else if ((intervalo > 0.5) && (intervalo < 1.0))
                   turnAux = 0.0f;
             }
 
-            glm::vec4 birdPosition = BezierCurve(bezierP0, bezierP1, bezierP2, bezierP3, interval);
+            glm::vec4 birdPosition = BezierCurve(bezierP0, bezierP1, bezierP2, bezierP3, intervalo);
 
             model = Matrix_Translate(birdPosition.x,0.88f,birdPosition.z)
-                 * Matrix_Scale(0.9f,0.9f,0.9f)
+                 * Matrix_Scale(0.6f,0.6f,0.6f)
                  * Matrix_Rotate_Y(turnAux);
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
             glUniform1i(object_id_uniform, BIRD);
             DrawVirtualObject("Bird");
 
-           model = Matrix_Translate(0.8f, -0.8f, 0.0f) * Matrix_Rotate_Y(3.14159265*-0.89) * Matrix_Rotate_X(3.14159265*-0.05) * Matrix_Scale(2.0f, 2.0f, 1.0f); // Ajuste conforme necessário
+           model = Matrix_Translate(0.8f, -0.8f, 0.0f) * Matrix_Rotate_Y(3.14159265*-0.89) * Matrix_Rotate_X(3.14159265*-0.05) * Matrix_Scale(2.0f, 2.0f, 1.0f);
             glm::mat4 weapon_view = Matrix_Identity();
             glm::mat4 weapon_projection = Matrix_Identity();
+
+            /*glDisable(GL_DEPTH_TEST);
 
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
             glUniformMatrix4fv(view_uniform, 1, GL_FALSE, glm::value_ptr(weapon_view));
@@ -663,7 +739,9 @@ int main(int argc, char* argv[])
             glUniform1i(object_id_uniform, WEAPON);
             DrawVirtualObject("the_weapon");
 
-            model = Matrix_Translate(1.0f,-1.1f,0.0f) * Matrix_Scale(0.1f,0.1f,0.1f);
+            glEnable(GL_DEPTH_TEST);*/
+
+            // model = Matrix_Translate(1.0f,-1.1f,0.0f) * Matrix_Scale(0.1f,0.1f,0.1f);
 
             // Imprimimos na tela os ângulos de Euler que controlam a rotação do
             // terceiro cubo.

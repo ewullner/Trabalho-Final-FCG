@@ -14,4 +14,4 @@ struct SceneObject
 
 //bool pointSphereCollision(glm::vec4 point, glm::vec3 sphere, float radius);
 bool PontoCubo(glm::vec4 ponto, SceneObject object, glm::vec3 position, float scale, float valor);
-//bool cubeCubeCollision(glm::vec4 point, SceneObject object, glm::vec3 position, float scale);
+bool CuboCubo(glm::vec4 point, SceneObject object, glm::vec3 position, float scale);
