@@ -249,7 +249,11 @@ bool g_ShowInfoText = true;
 
 std::vector<glm::vec3> monster_positions;
 int num_monsters = 5;
+<<<<<<< HEAD
 float min_spawn_radius = 1.5f;
+=======
+float min_spawn_radius = 1.5f; 
+>>>>>>> 1c384a68ff3901973693efcc67b81fb00bfe63bf
 float spawn_radius = 2.5f;
 float monster_speed = 0.1f; // Velocidade do monstro
 
@@ -348,7 +352,11 @@ int main(int argc, char* argv[])
     LoadTextureImage("../../data/tree.png"); // TextureImage1
     LoadTextureImage("../../data/grass.jpg"); // TextureImage2
     LoadTextureImage("../../data/monster.jpg"); // TextureImage3
+<<<<<<< HEAD
     LoadTextureImage("../../data/tree2.png"); // TextureImage4
+=======
+
+>>>>>>> 1c384a68ff3901973693efcc67b81fb00bfe63bf
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel spheremodel("../../data/sphere.obj");
@@ -453,6 +461,18 @@ int main(int argc, char* argv[])
         monster_positions.push_back(spawn_position);
     }
 
+    for (int i = 0; i < num_monsters; i++) {
+        float random_angle = static_cast<float>(rand()) / RAND_MAX * 2 * PI;
+        float random_distance = min_spawn_radius + static_cast<float>(rand()) / RAND_MAX * (spawn_radius - min_spawn_radius);
+
+        glm::vec3 spawn_position = glm::vec3(
+            x_posi + random_distance * cos(random_angle),
+            -0.88f,
+            z_posi + random_distance * sin(random_angle)
+        );
+        monster_positions.push_back(spawn_position);
+    }
+
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -531,9 +551,13 @@ int main(int argc, char* argv[])
                 angle += glm::radians(90.0f);
 
                 // Verifica se o jogador colidiu com o monstro
+<<<<<<< HEAD
                 if (PontoCubo(glm::vec4(x_posi, -0.88f, z_posi, 1.0f), g_VirtualScene["the_monster"], monster_positions[i], 0.1f, 0.1f)){
               //    if(CuboCubo(glm::vec4(x_posi, -0.88f, z_posi, 1.0f), g_VirtualScene["the_monster"], monster_positions[i],0.1f)){
 
+=======
+                if (PontoCubo(glm::vec4(x_posi, -0.88f, z_posi, 1.0f), g_VirtualScene["the_monster"], monster_positions[i], 0.1f, 0.1f)) {
+>>>>>>> 1c384a68ff3901973693efcc67b81fb00bfe63bf
                     // Fecha o jogo se houver colisão
                     glfwSetWindowShouldClose(window, GL_TRUE);
                 }
@@ -631,7 +655,10 @@ int main(int argc, char* argv[])
             #define TREE 4
             #define BIRD 5
             #define MONSTER 6
+<<<<<<< HEAD
             #define TREE2 7
+=======
+>>>>>>> 1c384a68ff3901973693efcc67b81fb00bfe63bf
 
             // Desenhamos o modelo da esfera
             /*model = Matrix_Translate(-1.0f,0.0f,0.0f)
@@ -670,7 +697,11 @@ int main(int argc, char* argv[])
               glUniform1i(object_id_uniform, TREE);
               DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
 
+<<<<<<< HEAD
              if(PontoCubo(camera_position_c, g_VirtualScene["Tree_Spruce_small_01_Cylinder_016"], position_tree[i],0.1f,3.5f)){
+=======
+             if(PontoCubo(camera_position_c, g_VirtualScene["Default"], position_tree[i],0.1f,0.1f)){
+>>>>>>> 1c384a68ff3901973693efcc67b81fb00bfe63bf
                 x_posi = ant_x1;
                 z_posi = ant_z1;
              }
