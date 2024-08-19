@@ -249,11 +249,7 @@ bool g_ShowInfoText = true;
 
 std::vector<glm::vec3> monster_positions;
 int num_monsters = 5;
-<<<<<<< HEAD
 float min_spawn_radius = 1.5f;
-=======
-float min_spawn_radius = 1.5f; 
->>>>>>> 1c384a68ff3901973693efcc67b81fb00bfe63bf
 float spawn_radius = 2.5f;
 float monster_speed = 0.1f; // Velocidade do monstro
 
@@ -352,11 +348,8 @@ int main(int argc, char* argv[])
     LoadTextureImage("../../data/tree.png"); // TextureImage1
     LoadTextureImage("../../data/grass.jpg"); // TextureImage2
     LoadTextureImage("../../data/monster.jpg"); // TextureImage3
-<<<<<<< HEAD
     LoadTextureImage("../../data/tree2.png"); // TextureImage4
-=======
 
->>>>>>> 1c384a68ff3901973693efcc67b81fb00bfe63bf
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     ObjModel spheremodel("../../data/sphere.obj");
@@ -431,7 +424,7 @@ int main(int argc, char* argv[])
             printf("%d\n",i);
         }
 
-         for(int i=1; i<tree; i++){
+        for(int i=1; i<tree; i++){
 
             random_x = rand() % 40 - 10;
             random_z = rand() % 40 - 10;
@@ -447,19 +440,7 @@ int main(int argc, char* argv[])
         glm::vec4 bezierP2 = glm::vec4(10.0f,5.0f,10.0f,1.0f);
         glm::vec4 bezierP3 = glm::vec4(0.0f,5.0f,0.0f,1.0f);
 
-        float previous_intervalo = sin(float(glfwGetTime())*0.2f);
-
-    for (int i = 0; i < num_monsters; i++) {
-        float random_angle = static_cast<float>(rand()) / RAND_MAX * 2 * PI;
-        float random_distance = min_spawn_radius + static_cast<float>(rand()) / RAND_MAX * (spawn_radius - min_spawn_radius);
-
-        glm::vec3 spawn_position = glm::vec3(
-            x_posi + random_distance * cos(random_angle),
-            -0.88f,
-            z_posi + random_distance * sin(random_angle)
-        );
-        monster_positions.push_back(spawn_position);
-    }
+        float previous_interval = sin(float(glfwGetTime())*0.2f);
 
     for (int i = 0; i < num_monsters; i++) {
         float random_angle = static_cast<float>(rand()) / RAND_MAX * 2 * PI;
@@ -551,13 +532,7 @@ int main(int argc, char* argv[])
                 angle += glm::radians(90.0f);
 
                 // Verifica se o jogador colidiu com o monstro
-<<<<<<< HEAD
-                if (PontoCubo(glm::vec4(x_posi, -0.88f, z_posi, 1.0f), g_VirtualScene["the_monster"], monster_positions[i], 0.1f, 0.1f)){
-              //    if(CuboCubo(glm::vec4(x_posi, -0.88f, z_posi, 1.0f), g_VirtualScene["the_monster"], monster_positions[i],0.1f)){
-
-=======
                 if (PontoCubo(glm::vec4(x_posi, -0.88f, z_posi, 1.0f), g_VirtualScene["the_monster"], monster_positions[i], 0.1f, 0.1f)) {
->>>>>>> 1c384a68ff3901973693efcc67b81fb00bfe63bf
                     // Fecha o jogo se houver colisão
                     glfwSetWindowShouldClose(window, GL_TRUE);
                 }
@@ -655,10 +630,7 @@ int main(int argc, char* argv[])
             #define TREE 4
             #define BIRD 5
             #define MONSTER 6
-<<<<<<< HEAD
             #define TREE2 7
-=======
->>>>>>> 1c384a68ff3901973693efcc67b81fb00bfe63bf
 
             // Desenhamos o modelo da esfera
             /*model = Matrix_Translate(-1.0f,0.0f,0.0f)
@@ -697,62 +669,56 @@ int main(int argc, char* argv[])
               glUniform1i(object_id_uniform, TREE);
               DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
 
-<<<<<<< HEAD
              if(PontoCubo(camera_position_c, g_VirtualScene["Tree_Spruce_small_01_Cylinder_016"], position_tree[i],0.1f,3.5f)){
-=======
-             if(PontoCubo(camera_position_c, g_VirtualScene["Default"], position_tree[i],0.1f,0.1f)){
->>>>>>> 1c384a68ff3901973693efcc67b81fb00bfe63bf
                 x_posi = ant_x1;
                 z_posi = ant_z1;
              }
              //}
            }
 
-           for(int i=0; i<tree; i++){
+            for(int i=0; i<tree; i++){
              //if(position_tree[i].x > 0.1f && position_tree[i].x < -0.1f && position_tree[i].z > 0.1f && position_tree[i].z < -0.51){
               model = Matrix_Translate(position_tree2[i].x, -1.1f, position_tree2[i].z)
               * Matrix_Scale(0.1f, 0.1f, 0.1f);
-
-           //   if(CuboCubo(camera_position_c, g_VirtualScene["Default"], position_tree2[i],0.8f)){
-           //     x_posi = ant_x1;
-           //     z_posi = ant_z1;
-            // }
-
               glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
               glUniform1i(object_id_uniform, TREE2);
               DrawVirtualObject("Default");
+
+          //   if(PontoCubo(camera_position_c, g_VirtualScene["Default"], position_tree2[i],0.1f,0.1f)){
+          //      x_posi = ant_x1;
+          //      z_posi = ant_z1;
+          //   }
              //}
            }
 
-
-            float intervalo = sin(currentTime*0.2f);
+            float interval = sin(currentTime*0.2f);
             float turnAux, turnAux2 = PI;
 
-            if(intervalo < 0.0f)
-                intervalo *= -1.0f;
+            if(interval < 0.0f)
+                interval *= -1.0f;
 
-            float turn = intervalo - previous_intervalo;
+            float turn = interval - previous_interval;
 
             if(turn < 0.0f){
             turnAux2 = 0.0f;
-            if ((intervalo > 0.0) && (intervalo < 0.07))
+            if((interval > 0.0) && (interval < 0.07))
                 turnAux =  PI;
-            if ((intervalo > 0.2) && (intervalo < 0.5))
+            if((interval > 0.2) && (interval < 0.5))
                 turnAux =  0.0f ;
-            else if ((intervalo > 0.5) && (intervalo < 1.0))
+            else if ((interval > 0.5) && (interval < 1.0))
                 turnAux = PI;
             }
             else{
-               if((intervalo > 0.0) && (intervalo < 0.5))
+               if((interval > 0.0) && (interval < 0.5))
                  turnAux =  PI;
-                else if ((intervalo > 0.5) && (intervalo < 1.0))
+                else if ((interval > 0.5) && (interval < 1.0))
                   turnAux = 0.0f;
             }
 
-            glm::vec4 birdPosition = BezierCurve(bezierP0, bezierP1, bezierP2, bezierP3, intervalo);
+            glm::vec4 birdPosition = BezierCurve(bezierP0, bezierP1, bezierP2, bezierP3, interval);
 
             model = Matrix_Translate(birdPosition.x,0.88f,birdPosition.z)
-                 * Matrix_Scale(0.6f,0.6f,0.6f)
+                 * Matrix_Scale(0.9f,0.9f,0.9f)
                  * Matrix_Rotate_Y(turnAux);
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
             glUniform1i(object_id_uniform, BIRD);
@@ -1881,6 +1847,4 @@ void TextRendering_ShowPaused(GLFWwindow* window)
     TextRendering_PrintString(window, paused_text, (x - text_width / 2) / width * 2 - 1, (y - TextRendering_LineHeight(window) * scale / 2) / height * 2 - 1, scale);
 }
 
-// set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
-// vim: set spell spelllang=pt_br :
 

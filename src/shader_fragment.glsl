@@ -26,10 +26,7 @@ uniform mat4 projection;
 #define TREE 4
 #define BIRD 5
 #define MONSTER 6
-<<<<<<< HEAD
 #define TREE2 7
-=======
->>>>>>> 1c384a68ff3901973693efcc67b81fb00bfe63bf
 uniform int object_id;
 
 uniform vec4 bbox_min;
@@ -39,10 +36,7 @@ uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
 uniform sampler2D TextureImage3;
-<<<<<<< HEAD
 uniform sampler2D TextureImage4;
-=======
->>>>>>> 1c384a68ff3901973693efcc67b81fb00bfe63bf
 
 // Cor gerada por Gouraud
 in vec4 color_v;
@@ -178,24 +172,21 @@ void main()
 
             // Propriedades espectrais
             Kd = texture(TextureImage3, vec2(U,V)).rgb;
-            Ks = vec3(0.8,0.8,0.8);
+            Ks = vec3(0.0,0.0,0.0);
             Ka = Kd/2.0;
             q  = 32.0;
         }
-<<<<<<< HEAD
-         else if ( object_id == TREE2)
+        else if ( object_id == TREE2)
         {
             U = texcoords.x;
             V = texcoords.y;
 
             // Propriedades espectrais
             Kd = texture(TextureImage4, vec2(U,V)).rgb;
-            Ks = vec3(0.8,0.8,0.8);
+            Ks = vec3(0.0,0.0,0.0);
             Ka = Kd/2.0;
-            q  = 32.0;
+            q  = 1.0;
         }
-=======
->>>>>>> 1c384a68ff3901973693efcc67b81fb00bfe63bf
         else // Objeto desconhecido = preto
         {
             Kd = vec3(0.0,0.0,0.0);
@@ -251,10 +242,7 @@ void main()
         // Atribui cor gerada por Gourard no monstro
         color = color_v;
     }
-<<<<<<< HEAD
 }
 
 
-=======
-}
->>>>>>> 1c384a68ff3901973693efcc67b81fb00bfe63bf
+
