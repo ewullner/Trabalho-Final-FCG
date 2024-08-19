@@ -669,7 +669,8 @@ int main(int argc, char* argv[])
               glUniform1i(object_id_uniform, TREE);
               DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
 
-             if(PontoCubo(camera_position_c, g_VirtualScene["Tree_Spruce_small_01_Cylinder_016"], position_tree[i],0.1f,3.5f)){
+             if(CuboCubo(camera_position_c, g_VirtualScene["Tree_Spruce_small_01_Cylinder_016"], position_tree[i],0.01f, 3.5f)){
+            //if(PontoCubo(camera_position_c, g_VirtualScene["Tree_Spruce_small_01_Cylinder_016"], position_tree[i],0.1f,3.5f)){
                 x_posi = ant_x1;
                 z_posi = ant_z1;
              }

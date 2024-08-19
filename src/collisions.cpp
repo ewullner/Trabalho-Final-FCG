@@ -17,8 +17,8 @@ bool PontoCubo(glm::vec4 ponto, SceneObject object, glm::vec3 position, float sc
      return false;
 }
 
-/*
-bool CuboCubo(glm::vec4 point, SceneObject object, glm::vec3 position, float scale){
+
+bool CuboCubo(glm::vec4 point, SceneObject object, glm::vec3 position, float scale, float valor){
     // Cube-Cube Collision
     // Verifica se o cubo criado a partir do ponto da câmera está dentro do cubo definido
     // pela Bounding Box do objeto
@@ -34,11 +34,17 @@ bool CuboCubo(glm::vec4 point, SceneObject object, glm::vec3 position, float sca
     float pbbmin_z = point.z - box_size/2.0;
     float pbbmax_z = point.z + box_size/2.0;
 
-    return ((pbbmin_x <= ((bbox_max.x)*scale) + position.x) && // Esse valor é subtraído para arrumar a Hitbox
-            (pbbmax_x >= ((bbox_min.x)*scale) + position.x) &&
-            (pbbmin_z <= ((bbox_max.z)*scale) + position.z) && // Esse valor é subtraído para arrumar a Hitbox
-            (pbbmax_z >= ((bbox_min.z)*scale) + position.z));
-}*/
+    if ((pbbmin_x <= ((bbox_max.x+valor)*scale) + position.x) && // Esse valor é subtraído para arrumar a Hitbox
+            (pbbmax_x >= ((bbox_min.x-valor)*scale) + position.x) &&
+            (pbbmin_z <= ((bbox_max.z+valor)*scale) + position.z) && // Esse valor é subtraído para arrumar a Hitbox
+            (pbbmax_z >= ((bbox_min.z-valor)*scale) + position.z)){
+            return true;
+    }else
+      return false;
+}
+
+//bool PontoCilindro(glm::vec4 point, SceneObject object, glm::vec3 position, float scale, float valor){
+
 
 
 
