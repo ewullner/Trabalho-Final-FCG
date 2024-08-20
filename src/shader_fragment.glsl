@@ -130,9 +130,9 @@ void main()
 
             // Propriedades espectrais
             Kd = texture(TextureImage1, vec2(U,V)).rgb;
-            Ks = vec3(0.0,0.0,0.0);
+            Ks = vec3(0.5,0.5,0.5);
             Ka = Kd/2.0;
-            q  = 1.0;
+            q  = 32.0;
         }
             else if ( object_id == BIRD )
         {
@@ -151,9 +151,9 @@ void main()
 
             // Propriedades espectrais
             Kd = texture(TextureImage4, vec2(U,V)).rgb;
-            Ks = vec3(0.0,0.0,0.0);
+            Ks = vec3(0.5,0.5,0.5);
             Ka = Kd/2.0;
-            q  = 1.0;
+            q  = 32.0;
         }
         else if ( object_id == ROCK)
         {
