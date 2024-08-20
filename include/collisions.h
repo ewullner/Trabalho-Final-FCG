@@ -12,6 +12,6 @@ struct SceneObject
     glm::vec3    bbox_max;
 };
 
-//bool pointSphereCollision(glm::vec4 point, glm::vec3 sphere, float radius);
 bool PontoCubo(glm::vec4 ponto, SceneObject object, glm::vec3 position, float scale, float valor);
 bool CuboCubo(glm::vec4 point, SceneObject object, glm::vec3 position, float scale, float valor, float box_size);
+bool CuboCilindro(glm::vec4 point, SceneObject object, glm::vec3 position, float cylinder_radius);

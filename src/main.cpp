@@ -5,7 +5,7 @@
 //    INF01047 Fundamentos de Computação Gráfica
 //               Prof. Eduardo Gastal
 //
-//                   LABORATÓRIO 5
+//                   Trabalho Final
 //
 
 // Arquivos "headers" padrões de C podem ser incluídos em um
@@ -190,17 +190,6 @@ glm::vec4 BezierCurve(glm::vec4 bezierP0,glm::vec4 bezierP1,glm::vec4 bezierP2,g
 // Definimos uma estrutura que armazenará dados necessários para renderizar
 // cada objeto da cena virtual.
 
-/*struct SceneObject
-{
-    std::string  name;        // Nome do objeto
-    size_t       first_index; // Índice do primeiro vértice dentro do vetor indices[] definido em BuildTrianglesAndAddToVirtualScene()
-    size_t       num_indices; // Número de índices do objeto dentro do vetor indices[] definido em BuildTrianglesAndAddToVirtualScene()
-    GLenum       rendering_mode; // Modo de rasterização (GL_TRIANGLES, GL_TRIANGLE_STRIP, etc.)
-    GLuint       vertex_array_object_id; // ID do VAO onde estão armazenados os atributos do modelo
-    glm::vec3    bbox_min; // Axis-Aligned Bounding Box do objeto
-    glm::vec3    bbox_max;
-};*/
-
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
 // A cena virtual é uma lista de objetos nomeados, guardados em um dicionário
@@ -366,28 +355,18 @@ int main(int argc, char* argv[])
 
     // Carregamos duas imagens para serem utilizadas como textura
     LoadTextureImage("../../data/tc-earth_daymap_surface.jpg"); // TextureImage0
-    LoadTextureImage("../../data/tree.png"); // TextureImage1
+    LoadTextureImage("../../data/tree.jpg"); // TextureImage1
     LoadTextureImage("../../data/grass.jpg"); // TextureImage2
     LoadTextureImage("../../data/monster.jpg"); // TextureImage3
     LoadTextureImage("../../data/tree2.png"); // TextureImage4
+    LoadTextureImage("../../data/bird.png"); // TextureImage5
 
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
-    ObjModel spheremodel("../../data/sphere.obj");
-    ComputeNormals(&spheremodel);
-    BuildTrianglesAndAddToVirtualScene(&spheremodel);
-
-    ObjModel bunnymodel("../../data/bunny.obj");
-    ComputeNormals(&bunnymodel);
-    BuildTrianglesAndAddToVirtualScene(&bunnymodel);
 
     ObjModel planemodel("../../data/plane.obj");
     ComputeNormals(&planemodel);
     BuildTrianglesAndAddToVirtualScene(&planemodel);
-
-    ObjModel weaponmodel("../../data/weapon.obj");
-    ComputeNormals(&weaponmodel);
-    BuildTrianglesAndAddToVirtualScene(&weaponmodel);
 
     ObjModel treemodel("../../data/tree.obj");
     ComputeNormals(&treemodel);
@@ -538,33 +517,6 @@ int main(int argc, char* argv[])
             float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
             float x = r*cos(g_CameraPhi)*sin(g_CameraTheta);
 
-            // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
-            // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-            //glm::vec4 camera_lookat_l    = glm::vec4(0.0f,0.0f,0.0f,1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
-            //glm::vec4 camera_view_vector = glm::vec4(cos(g_CameraPhi) * sin(g_CameraTheta), sin(g_CameraPhi), cos(g_CameraPhi) * cos(g_CameraTheta), 0.0f); // Vetor "view", sentido para onde a câmera está virada
-            //glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
-            //glm::vec4 w = -camera_view_vector/norm(camera_view_vector);
-            //glm::vec4 u = crossproduct(camera_up_vector, w);
-            //u = u/norm(u);
-
-            // Computamos a matriz "View" utilizando os parâmetros da câmera para
-            // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-            //glm::mat4 view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
-
-            /*
-            // Agora computamos a matriz de Projeção.
-            glm::mat4 projection;
-
-            // Note que, no sistema de coordenadas da câmera, os planos near e far
-            // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
-            float nearplane = -0.1f;  // Posição do "near plane"
-            float farplane  = -10.0f; // Posição do "far plane"
-
-            // Projeção Perspectiva.
-            // Para definição do field of view (FOV), veja slides 205-215 do documento Aula_09_Projecoes.pdf.
-            float field_of_view = 3.141592 / 3.0f;
-            projection = Matrix_Perspective(field_of_view, g_ScreenRatio, nearplane, farplane);*/
-
             for (int i = 0; i < num_monsters; i++) {
                 glm::vec3 direction = glm::normalize(glm::vec3(x_posi, -0.88f, z_posi) - monster_positions[i]);
                 monster_positions[i] += direction * monster_speed * deltaT;
@@ -619,34 +571,29 @@ int main(int argc, char* argv[])
             DrawVirtualObject("the_plane");
 
             for(int i=0; i<tree; i++){
-             //if(position_tree[i].x > 0.1f && position_tree[i].x < -0.1f && position_tree[i].z > 0.1f && position_tree[i].z < -0.51){
-              model = Matrix_Translate(position_tree[i].x, -1.1f, position_tree[i].z)
-              * Matrix_Scale(0.1f, 0.1f, 0.1f);
-              glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-              glUniform1i(object_id_uniform, TREE);
-              DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+                model = Matrix_Translate(position_tree[i].x, -1.1f, position_tree[i].z)
+                * Matrix_Scale(0.1f, 0.1f, 0.1f);
+                glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+                glUniform1i(object_id_uniform, TREE);
+                DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
 
-             if(CuboCubo(camera_position_c, g_VirtualScene["Tree_Spruce_small_01_Cylinder_016"], position_tree[i],0.01f, 3.5f, 0.4f)){
-            //if(PontoCubo(camera_position_c, g_VirtualScene["Tree_Spruce_small_01_Cylinder_016"], position_tree[i],0.1f,3.5f)){
-                x_posi = ant_x1;
-                z_posi = ant_z1;
-             }
-             //}
+                if(CuboCubo(camera_position_c, g_VirtualScene["Tree_Spruce_small_01_Cylinder_016"], position_tree[i],0.01f, 3.5f, 0.4f)){
+                    x_posi = ant_x1;
+                    z_posi = ant_z1;
+                }
            }
 
             for(int i=0; i<tree; i++){
-             //if(position_tree[i].x > 0.1f && position_tree[i].x < -0.1f && position_tree[i].z > 0.1f && position_tree[i].z < -0.51){
-              model = Matrix_Translate(position_tree2[i].x, -1.1f, position_tree2[i].z)
-              * Matrix_Scale(0.1f, 0.1f, 0.1f);
-              glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-              glUniform1i(object_id_uniform, TREE2);
-              DrawVirtualObject("Default");
+                model = Matrix_Translate(position_tree2[i].x, -1.1f, position_tree2[i].z)
+                * Matrix_Scale(0.1f, 0.1f, 0.1f);
+                glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+                glUniform1i(object_id_uniform, TREE2);
+                DrawVirtualObject("Default");
 
-          //   if(PontoCubo(camera_position_c, g_VirtualScene["Default"], position_tree2[i],0.1f,0.1f)){
-          //      x_posi = ant_x1;
-          //      z_posi = ant_z1;
-          //   }
-             //}
+                if (CuboCilindro(camera_position_c, g_VirtualScene["Default"], position_tree2[i], 0.4f)) {
+                    x_posi = ant_x1;
+                    z_posi = ant_z1;
+                }
            }
 
            if (shoot_rock)
@@ -732,25 +679,6 @@ int main(int argc, char* argv[])
            model = Matrix_Translate(0.8f, -0.8f, 0.0f) * Matrix_Rotate_Y(3.14159265*-0.89) * Matrix_Rotate_X(3.14159265*-0.05) * Matrix_Scale(2.0f, 2.0f, 1.0f);
             glm::mat4 weapon_view = Matrix_Identity();
             glm::mat4 weapon_projection = Matrix_Identity();
-
-            /*glDisable(GL_DEPTH_TEST);
-
-            glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-            glUniformMatrix4fv(view_uniform, 1, GL_FALSE, glm::value_ptr(weapon_view));
-            glUniformMatrix4fv(projection_uniform, 1, GL_FALSE, glm::value_ptr(weapon_projection));
-            glUniform1i(object_id_uniform, WEAPON);
-            DrawVirtualObject("the_weapon");
-
-            glEnable(GL_DEPTH_TEST);*/
-
-            // model = Matrix_Translate(1.0f,-1.1f,0.0f) * Matrix_Scale(0.1f,0.1f,0.1f);
-
-            // Imprimimos na tela os ângulos de Euler que controlam a rotação do
-            // terceiro cubo.
-            //TextRendering_ShowEulerAngles(window);
-
-            // Imprimimos na informação sobre a matriz de projeção sendo utilizada.
-            //TextRendering_ShowProjection(window);
 
             // Imprimimos na tela informação sobre o número de quadros renderizados
             // por segundo (frames per second).
@@ -950,6 +878,7 @@ void LoadShadersFromFiles()
     glUniform1i(glGetUniformLocation(GpuProgramID, "TextureImage2"), 2);
     glUniform1i(glGetUniformLocation(GpuProgramID, "TextureImage3"), 3);
     glUniform1i(glGetUniformLocation(GpuProgramID, "TextureImage4"), 4);
+    glUniform1i(glGetUniformLocation(GpuProgramID, "TextureImage5"), 5);
     glUseProgram(0);
 }
 

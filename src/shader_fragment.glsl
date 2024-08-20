@@ -38,6 +38,7 @@ uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
 uniform sampler2D TextureImage3;
 uniform sampler2D TextureImage4;
+uniform sampler2D TextureImage5;
 
 // Cor gerada por Gouraud
 in vec4 color_v;
@@ -111,31 +112,15 @@ void main()
         }
         else if ( object_id == PLANE )
         {
-            // Coordenadas de textura do plano, obtidas do arquivo OBJ
-
-        //    U = texcoords.x;
-        //    V = texcoords.y;
-
-        //    color.rgb = texture(TextureImage0, vec2(U,V)).rgb;
-        //    color.rgb = pow(color.rgb, vec3(1.0,1.0,1.0)/2.2);
-
-        //    return;
-
-            // PREENCHA AQUI
-            // Propriedades espectrais do plano
-
-        //  Kd = vec3(0.2,0.3,0.5);
-        //  Ks = vec3(0.2,0.1,0.1);
-        //  Ka = vec3(0.3,0.4,0.2);
-        //  q = 20.0;
 
             U = texcoords.x;
             V = texcoords.y;
 
-            color.rgb = texture(TextureImage2, vec2(U,V)).rgb;
-            color.rgb = pow(color.rgb, vec3(1.0,1.0,1.0)/2.2);
-
-            return;
+            // Propriedades espectrais
+            Kd = texture(TextureImage2, vec2(U,V)).rgb;
+            Ks = vec3(0.0,0.0,0.0);
+            Ka = Kd/2.0;
+            q  = 1.0;
 
         }
         else if ( object_id == TREE)
@@ -154,10 +139,10 @@ void main()
             U = texcoords.x;
             V = texcoords.y;
 
-            Kd = vec3(0.996, 0.113, 0.093);
-            Ks = vec3(0.0,0.0,0.0);
+            Kd = texture(TextureImage5, vec2(U,V)).rgb;
+            Ks = vec3(0.5,0.5,0.5);
             Ka = Kd/2.0;
-            q  = 1.0;
+            q  = 32.0;
         }
         else if ( object_id == TREE2)
         {

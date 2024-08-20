@@ -43,8 +43,18 @@ bool CuboCubo(glm::vec4 point, SceneObject object, glm::vec3 position, float sca
       return false;
 }
 
-//bool PontoCilindro(glm::vec4 point, SceneObject object, glm::vec3 position, float scale, float valor){
-
+bool CuboCilindro(glm::vec4 point, SceneObject object, glm::vec3 position, float cylinder_radius) {
+    // Calcular a distância horizontal (plano XZ) entre o centro do cubo e o eixo do cilindro
+    float distance_x = point.x - position.x;
+    float distance_z = point.z - position.z;
+    
+    // Distância horizontal ao quadrado (evitar raiz quadrada desnecessária)
+    float distance_squared = distance_x * distance_x + distance_z * distance_z;
+    float radius_squared = cylinder_radius * cylinder_radius;
+    
+    // Verificar se a distância horizontal está dentro do raio do cilindro
+    return distance_squared <= radius_squared;
+}
 
 
 
