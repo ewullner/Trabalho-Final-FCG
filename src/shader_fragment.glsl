@@ -27,6 +27,7 @@ uniform mat4 projection;
 #define BIRD 5
 #define MONSTER 6
 #define TREE2 7
+#define ROCK 8
 uniform int object_id;
 
 uniform vec4 bbox_min;
@@ -137,13 +138,6 @@ void main()
             return;
 
         }
-        else if ( object_id == WEAPON )
-        {
-            Kd = vec3(0.05, 0.05, 0.05);
-            Ks = vec3(0.2, 0.2, 0.2);
-            Ka = vec3(0.05, 0.05, 0.05);
-            q = 32.0;
-        }
         else if ( object_id == TREE)
         {
             U = texcoords.x;
@@ -165,17 +159,6 @@ void main()
             Ka = Kd/2.0;
             q  = 1.0;
         }
-            else if ( object_id == MONSTER)
-        {
-            U = texcoords.x;
-            V = texcoords.y;
-
-            // Propriedades espectrais
-            Kd = texture(TextureImage3, vec2(U,V)).rgb;
-            Ks = vec3(0.0,0.0,0.0);
-            Ka = Kd/2.0;
-            q  = 32.0;
-        }
         else if ( object_id == TREE2)
         {
             U = texcoords.x;
@@ -186,6 +169,17 @@ void main()
             Ks = vec3(0.0,0.0,0.0);
             Ka = Kd/2.0;
             q  = 1.0;
+        }
+        else if ( object_id == ROCK)
+        {
+            U = texcoords.x;
+            V = texcoords.y;
+
+            // Propriedades espectrais
+            Kd = texture(TextureImage3, vec2(U,V)).rgb;
+            Ks = vec3(0.5,0.5,0.5);
+            Ka = Kd/2.0;
+            q  = 32.0;
         }
         else // Objeto desconhecido = preto
         {

@@ -22,6 +22,7 @@ uniform mat4 projection;
 #define BIRD 5
 #define MONSTER 6
 #define TREE2 7
+#define ROCK 8
 uniform int object_id;
 
 // Atributos de vértice que serão gerados como saída ("out") pelo Vertex Shader.

@@ -21,6 +21,7 @@
 #include <ctime>
 
 // Headers abaixo são específicos de C++
+#include <list>
 #include <map>
 #include <stack>
 #include <string>
@@ -129,6 +130,12 @@ struct ObjModel
 
         printf("OK.\n");
     }
+};
+
+struct Rock
+{
+    glm::vec4 position;
+    glm::vec3 direction;
 };
 
 
@@ -253,6 +260,10 @@ float min_spawn_radius = 1.5f;
 float spawn_radius = 2.5f;
 float monster_speed = 0.1f; // Velocidade do monstro
 
+bool shoot_rock = false;
+std::list<Rock> active_rocks;
+float rock_speed = 5.0f; // Velocidade da pedra
+
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint vertex_shader_id;
 GLuint fragment_shader_id;
@@ -263,6 +274,16 @@ GLint projection_uniform;
 GLint object_id_uniform;
 GLint bbox_min_uniform;
 GLint bbox_max_uniform;
+
+#define SPHERE 0
+#define BUNNY  1
+#define PLANE  2
+#define WEAPON 3
+#define TREE 4
+#define BIRD 5
+#define MONSTER 6
+#define TREE2 7
+#define ROCK 8
 
 // Número de texturas carregadas pela função LoadTextureImage()
 GLuint g_NumLoadedTextures = 0;
@@ -384,6 +405,10 @@ int main(int argc, char* argv[])
     ComputeNormals(&monstermodel);
     BuildTrianglesAndAddToVirtualScene(&monstermodel);
 
+    ObjModel rockmodel("../../data/rock.obj");
+    ComputeNormals(&rockmodel);
+    BuildTrianglesAndAddToVirtualScene(&rockmodel);
+
     if ( argc > 1 )
     {
         ObjModel model(argv[1]);
@@ -413,27 +438,44 @@ int main(int argc, char* argv[])
 
     float random_x, random_z;
 
-        for(int i=1; i<tree; i++){
+    float min_distance_from_camera = 3.0f; // Distância mínima da câmera para as árvores
+    glm::vec3 camera_position = glm::vec3(camera_position_c.x, camera_position_c.y, camera_position_c.z); // Converter glm::vec4 para glm::vec3
 
+    for (int i = 1; i < tree; i++) {
+        bool valid_position = false;
+
+        while (!valid_position) {
             random_x = rand() % 40 - 10;
             random_z = rand() % 40 - 10;
 
+            glm::vec3 tree_position = glm::vec3(random_x, -1.1f, random_z);
 
-            position_tree[i].x = random_x;
-            position_tree[i].z = random_z;
-            printf("%d\n",i);
+            if (glm::distance(tree_position, camera_position) > min_distance_from_camera) {
+                position_tree[i].x = random_x;
+                position_tree[i].z = random_z;
+                valid_position = true;
+            }
         }
+        printf("%d\n", i);
+    }
 
-        for(int i=1; i<tree; i++){
+    for (int i = 1; i < tree; i++) {
+        bool valid_position = false;
 
+        while (!valid_position) {
             random_x = rand() % 40 - 10;
             random_z = rand() % 40 - 10;
 
+            glm::vec3 tree_position = glm::vec3(random_x, -1.1f, random_z);
 
-            position_tree2[i].x = random_x;
-            position_tree2[i].z = random_z;
-            printf("%d\n",i);
+            if (glm::distance(tree_position, camera_position) > min_distance_from_camera) {
+                position_tree2[i].x = random_x;
+                position_tree2[i].z = random_z;
+                valid_position = true;
+            }
         }
+        printf("%d\n", i);
+    }
 
         glm::vec4 bezierP0 = glm::vec4(0.0f,5.0f,0.0f,1.0f);
         glm::vec4 bezierP1 = glm::vec4(10.0f,5.0f,10.0f,1.0f);
@@ -532,7 +574,7 @@ int main(int argc, char* argv[])
                 angle += glm::radians(90.0f);
 
                 // Verifica se o jogador colidiu com o monstro
-                if (PontoCubo(glm::vec4(x_posi, -0.88f, z_posi, 1.0f), g_VirtualScene["the_monster"], monster_positions[i], 0.1f, 0.1f)) {
+                if (CuboCubo(glm::vec4(x_posi, -0.88f, z_posi, 1.0f), g_VirtualScene["the_monster"], monster_positions[i], 0.1f, 0.1f, 0.1f)) {
                     // Fecha o jogo se houver colisão
                     glfwSetWindowShouldClose(window, GL_TRUE);
                 }
@@ -542,57 +584,9 @@ int main(int argc, char* argv[])
                                 * Matrix_Rotate_Y(angle) // Aplica a rotação no eixo Y
                                 * Matrix_Scale(0.1f, 0.1f, 0.1f); // Escala do monstro
                 glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-                glUniform1i(object_id_uniform, 6); // Supondo que 6 é o ID para "the_monster"
+                glUniform1i(object_id_uniform, MONSTER);
                 DrawVirtualObject("the_monster");
             }
-            //previousTime = currentTime;
-
-
-            /*
-            if (W_pressed || S_pressed)
-            {
-            // Computamos a posição da câmera utilizando coordenadas esféricas.
-                float r = g_CameraDistance;
-                float y = r*sin(g_CameraPhi);
-                float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
-                float x = r*cos(g_CameraPhi)*sin(g_CameraTheta);
-
-               // glm::vec4 camera_view_vector = glm::vec4(x, 0.0f, z, 0.0f); // Vetor "view" com componente Y = 0
-
-                // Normaliza o vetor de visão
-              //  camera_view_vector = glm::normalize(camera_view_vector);
-
-                // Atualizar a posição do personagem com base nas teclas W e S
-                if (W_pressed){
-                //    camera_position_c += camera_view_vector * camera_speed * deltaT;
-                 //  deltaT = 0;
-                //   x_posi =  x_posi + (deltaT*velocidade) * x;
-                //   z_posi =  z_posi + (deltaT*velocidade) * z;
-                   camera_position_c = glm::vec4(x_posi + (deltaT*velocidade) * x, -0.88f, z_posi + (deltaT*velocidade) * z, 1.0f);
-               //    camera_view_vector = glm::vec4(x_posi, -y, z_posi, 0.0f);
-
-                }
-                if (S_pressed){
-               //     camera_position_c -= camera_view_vector * camera_speed * deltaT;
-                  camera_position_c = glm::vec4(x_posi - (deltaT*velocidade) * x, -0.88f, z_posi - (deltaT*velocidade) * z, 1.0f);
-               //   camera_view_vector = glm::vec4(x_posi, -y, z_posi, 0.0f);
-                }
-
-            }
-
-            if (A_pressed){
-           // camera_position_c += -u * camera_speed * deltaT;
-                  camera_position_c = glm::vec4(x_posi + (deltaT*velocidade) * z, -0.88f, z_posi - (deltaT*velocidade) * x, 1.0f);
-             //     camera_view_vector = glm::vec4(x_posi, -y, z_posi, 0.0f);
-
-            }
-
-            if (D_pressed){
-              //  camera_position_c += u * camera_speed * deltaT;
-                  camera_position_c = glm::vec4(x_posi - (deltaT*velocidade) * z, -0.88f, z_posi + (deltaT*velocidade) * x, 1.0f);
-             //     camera_view_vector = glm::vec4(x_posi, -y, z_posi, 0.0f);
-            }*/
-
 
             camera_position_c = ControlKeys(window, x, -0.88f, z);
             camera_view_vector = glm::vec4(x, y, z, 0.0f);
@@ -619,43 +613,6 @@ int main(int argc, char* argv[])
 
             glm::mat4 model = Matrix_Identity(); // Transformação identidade de modelagem
 
-            // Enviamos as matrizes "view" e "projection" para a placa de vídeo
-            // (GPU). Veja o arquivo "shader_vertex.glsl", onde estas são
-            // efetivamente aplicadas em todos os pontos.
-
-            #define SPHERE 0
-            #define BUNNY  1
-            #define PLANE  2
-            #define WEAPON 3
-            #define TREE 4
-            #define BIRD 5
-            #define MONSTER 6
-            #define TREE2 7
-
-            // Desenhamos o modelo da esfera
-            /*model = Matrix_Translate(-1.0f,0.0f,0.0f)
-                * Matrix_Rotate_Z(0.6f)
-                * Matrix_Rotate_X(0.2f)
-                * Matrix_Rotate_Y(g_AngleY + (float)glfwGetTime() * 0.1f);
-            glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(g_object_id_uniform, SPHERE);
-            DrawVirtualObject("the_sphere");*/
-
-            // Desenhamos o modelo do coelho
-            /*model = Matrix_Translate(1.0f,0.0f,0.0f)
-                * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f);
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, BUNNY);
-            DrawVirtualObject("the_bunny");*/
-
-            // Desenhamos o plano do chão
-            /*
-            model = Matrix_Translate(0.0f,0.0f,0.0f)
-            * Matrix_Scale(8.0f,1.0f,8.0f);
-            glUniformMatrix4fv(g_model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(g_object_id_uniform, PLANE);
-            DrawVirtualObject("SimpleGround_Plane.024");
-            */
             model = Matrix_Translate(0.0f,-1.1f,0.0f);
             glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
             glUniform1i(object_id_uniform, PLANE);
@@ -669,7 +626,7 @@ int main(int argc, char* argv[])
               glUniform1i(object_id_uniform, TREE);
               DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
 
-             if(CuboCubo(camera_position_c, g_VirtualScene["Tree_Spruce_small_01_Cylinder_016"], position_tree[i],0.01f, 3.5f)){
+             if(CuboCubo(camera_position_c, g_VirtualScene["Tree_Spruce_small_01_Cylinder_016"], position_tree[i],0.01f, 3.5f, 0.4f)){
             //if(PontoCubo(camera_position_c, g_VirtualScene["Tree_Spruce_small_01_Cylinder_016"], position_tree[i],0.1f,3.5f)){
                 x_posi = ant_x1;
                 z_posi = ant_z1;
@@ -691,6 +648,53 @@ int main(int argc, char* argv[])
           //   }
              //}
            }
+
+           if (shoot_rock)
+            {
+                Rock new_rock;
+                new_rock.position = camera_position_c;
+                new_rock.direction = glm::normalize(glm::vec3(camera_view_vector));
+                active_rocks.push_back(new_rock);
+                shoot_rock = false; // Resetar o estado do botão
+            }
+
+            // Atualizar a posição das pedras e verificar colisão com monstros
+            for (auto it = active_rocks.begin(); it != active_rocks.end();)
+            {
+                // Atualizar a posição da pedra
+                it->position += glm::vec4(it->direction, 0.0f) * rock_speed * deltaT;
+
+                // Verificar colisão com monstros
+                bool rock_removed = false;
+                for (int i = 0; i < num_monsters; i++)
+                {
+                    if (PontoCubo(it->position, g_VirtualScene["the_monster"], monster_positions[i], 0.1f, 0.1f))
+                    {
+                        // Remover o monstro
+                        monster_positions.erase(monster_positions.begin() + i);
+                        num_monsters--;
+                        rock_removed = true;
+                        break;
+                    }
+                }
+
+                // Remover a pedra se colidiu com um monstro ou saiu do limite
+                if (rock_removed || glm::length(it->position) > 100.0f)
+                {
+                    it = active_rocks.erase(it);
+                }
+                else
+                {
+                    // Desenhar a pedra
+                    glm::mat4 model = Matrix_Translate(it->position.x, it->position.y, it->position.z)
+                                    * Matrix_Scale(0.01f, 0.01f, 0.01f);
+                    glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+                    glUniform1i(object_id_uniform, ROCK);
+                    DrawVirtualObject("the_rock");
+
+                    ++it;
+                }
+            }
 
             float interval = sin(currentTime*0.2f);
             float turnAux, turnAux2 = PI;
@@ -719,7 +723,7 @@ int main(int argc, char* argv[])
             glm::vec4 birdPosition = BezierCurve(bezierP0, bezierP1, bezierP2, bezierP3, interval);
 
             model = Matrix_Translate(birdPosition.x,0.88f,birdPosition.z)
-                 * Matrix_Scale(0.9f,0.9f,0.9f)
+                 * Matrix_Scale(0.05f,0.05f,0.05f)
                  * Matrix_Rotate_Y(turnAux);
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
             glUniform1i(object_id_uniform, BIRD);
@@ -1363,6 +1367,7 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
         // com o botão esquerdo pressionado.
         glfwGetCursorPos(window, &g_LastCursorPosX, &g_LastCursorPosY);
         g_LeftMouseButtonPressed = true;
+        shoot_rock = true;
     }
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
     {
