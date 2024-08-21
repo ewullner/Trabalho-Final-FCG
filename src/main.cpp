@@ -132,7 +132,7 @@ struct ObjModel
     }
 };
 
-struct Rock
+struct Rock // Struct do projetil pedra
 {
     glm::vec4 position;
     glm::vec3 direction;
@@ -243,16 +243,16 @@ bool g_ShowInfoText = true;
 
 std::vector<glm::vec3> monster_positions;
 int num_monsters = 5;
-float min_spawn_radius = 1.5f;
-float spawn_radius = 2.5f;
+float min_spawn_radius = 1.5f; // Raio minimo para spawn dos monstros
+float spawn_radius = 2.5f; // Raio maximo para spawn dos monstros
 float monster_speed = 0.1f; // Velocidade do monstro
 
-bool shoot_rock = false;
-std::list<Rock> active_rocks;
+bool shoot_rock = false; // bool para quando atirar pedra
+std::list<Rock> active_rocks; // lista de pedras ativas
 float rock_speed = 5.0f; // Velocidade da pedra
 
 glm::vec4 camera_lookat_l = glm::vec4(0.0f,0.0f,0.0f,1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
-bool g_UseLookAtCamera = false;
+bool g_UseLookAtCamera = false; // bool para quando for camera look-at
 
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint vertex_shader_id;
@@ -406,13 +406,13 @@ int main(int argc, char* argv[])
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
-    float camera_speed = 0.5f;
-    glm::vec4 camera_position_c  = glm::vec4(0.0f,-0.88f,0.0f,1.0f);
+    float camera_speed = 0.5f; // velocidade do player(camera)
+    glm::vec4 camera_position_c  = glm::vec4(0.0f,-0.88f,0.0f,1.0f); // Posicao inicial do player(camera)
     glm::vec4 camera_view_vector = glm::vec4(x_posi, 2.5f, z_posi, 1.0f) - glm::vec4(62.26f, 15.0f, -49.71f, 1.0f);
     glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f);
 
-    glm::vec3 position_tree[tree];
-    glm::vec3 position_tree2[tree];
+    glm::vec3 position_tree[tree]; // Vetor para armazenar pos da arvore tipo 1
+    glm::vec3 position_tree2[tree]; // Vetor para armazenar pos da arvore tipo 2
 
     float random_x, random_z;
 
@@ -422,7 +422,7 @@ int main(int argc, char* argv[])
     for (int i = 1; i < tree; i++) {
         bool valid_position = false;
 
-        while (!valid_position) {
+        while (!valid_position) { // loop para gerar posicao valida para arvore(nao colidir com player de primeira)
             random_x = rand() % 40 - 10;
             random_z = rand() % 40 - 10;
 
@@ -440,7 +440,7 @@ int main(int argc, char* argv[])
     for (int i = 1; i < tree; i++) {
         bool valid_position = false;
 
-        while (!valid_position) {
+        while (!valid_position) { // loop para gerar posicao valida para arvore(nao colidir com player de primeira)
             random_x = rand() % 40 - 10;
             random_z = rand() % 40 - 10;
 
@@ -455,12 +455,12 @@ int main(int argc, char* argv[])
         printf("%d\n", i);
     }
 
-        glm::vec4 bezierP0 = glm::vec4(0.0f,5.0f,0.0f,1.0f);
-        glm::vec4 bezierP1 = glm::vec4(10.0f,5.0f,10.0f,1.0f);
-        glm::vec4 bezierP2 = glm::vec4(10.0f,5.0f,10.0f,1.0f);
-        glm::vec4 bezierP3 = glm::vec4(0.0f,5.0f,0.0f,1.0f);
+    glm::vec4 bezierP0 = glm::vec4(0.0f,5.0f,0.0f,1.0f);
+    glm::vec4 bezierP1 = glm::vec4(10.0f,5.0f,10.0f,1.0f);
+    glm::vec4 bezierP2 = glm::vec4(10.0f,5.0f,10.0f,1.0f);
+    glm::vec4 bezierP3 = glm::vec4(0.0f,5.0f,0.0f,1.0f);
 
-        float previous_interval = sin(float(glfwGetTime())*0.2f);
+    float previous_interval = sin(float(glfwGetTime())*0.2f);
 
     for (int i = 0; i < num_monsters; i++) {
         float random_angle = static_cast<float>(rand()) / RAND_MAX * 2 * PI;
@@ -496,7 +496,7 @@ int main(int argc, char* argv[])
         glUseProgram(GpuProgramID);
 
         currentTime = glfwGetTime();
-        deltaT = currentTime - previousTime;
+        deltaT = currentTime - previousTime; // deltaT para animacao
 
         // Pedimos para a GPU utilizar o programa de GPU criado acima (contendo
         // os shaders de vértice e fragmentos).
@@ -516,11 +516,11 @@ int main(int argc, char* argv[])
 
         for (int i = 0; i < num_monsters; i++) {
             glm::vec3 direction = glm::normalize(glm::vec3(x_posi, -0.88f, z_posi) - monster_positions[i]);
-            monster_positions[i] += direction * monster_speed * deltaT;
+            monster_positions[i] += direction * monster_speed * deltaT; // Movimentacao do monstro
 
             float angle = atan2(direction.x, direction.z);
 
-            angle += glm::radians(90.0f);
+            angle += glm::radians(90.0f); // Variavel angle para fazer monstro olhar para o player
 
             // Verifica se o jogador colidiu com o monstro
             if (CuboCubo(glm::vec4(x_posi, -0.88f, z_posi, 1.0f), g_VirtualScene["the_monster"], monster_positions[i], 0.1f, 0.1f, 0.1f)) {
@@ -537,7 +537,7 @@ int main(int argc, char* argv[])
             DrawVirtualObject("the_monster");
         }
 
-        if (g_UseLookAtCamera)
+        if (g_UseLookAtCamera) // Se for camera look-at
         {
             camera_position_c = glm::vec4(x,y,z,1.0f);
             camera_view_vector = glm::normalize(camera_lookat_l - camera_position_c);
@@ -570,43 +570,43 @@ int main(int argc, char* argv[])
 
         glm::mat4 model = Matrix_Identity(); // Transformação identidade de modelagem
 
-        model = Matrix_Translate(0.0f,-1.1f,0.0f);
+        model = Matrix_Translate(0.0f,-1.1f,0.0f); // desenha chao
         glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
         glUniform1i(object_id_uniform, PLANE);
         DrawVirtualObject("the_plane");
 
-        for(int i=0; i<tree; i++){
+        for(int i=0; i<tree; i++){ // desenha arvores tipo1
             model = Matrix_Translate(position_tree[i].x, -1.1f, position_tree[i].z)
             * Matrix_Scale(0.1f, 0.1f, 0.1f);
             glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
             glUniform1i(object_id_uniform, TREE);
             DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
 
-            if(CuboCubo(camera_position_c, g_VirtualScene["Tree_Spruce_small_01_Cylinder_016"], position_tree[i],0.01f, 3.5f, 0.4f)){
+            if(CuboCubo(camera_position_c, g_VirtualScene["Tree_Spruce_small_01_Cylinder_016"], position_tree[i],0.01f, 3.5f, 0.4f)){ // checagem de colisao
                 x_posi = ant_x1;
                 z_posi = ant_z1;
             }
         }
 
-        for(int i=0; i<tree; i++){
+        for(int i=0; i<tree; i++){ // desenha arvores tipo2
             model = Matrix_Translate(position_tree2[i].x, -1.1f, position_tree2[i].z)
             * Matrix_Scale(0.1f, 0.1f, 0.1f);
             glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
             glUniform1i(object_id_uniform, TREE2);
             DrawVirtualObject("Default");
 
-            if (CuboCilindro(camera_position_c, g_VirtualScene["Default"], position_tree2[i], 0.4f)) {
+            if (CuboCilindro(camera_position_c, g_VirtualScene["Default"], position_tree2[i], 0.4f)) { // checagem de colisao
                 x_posi = ant_x1;
                 z_posi = ant_z1;
             }
         }
 
-        if (shoot_rock)
+        if (shoot_rock) // Se atirar projetil
         {
             Rock new_rock;
-            new_rock.position = camera_position_c;
-            new_rock.direction = glm::normalize(glm::vec3(camera_view_vector));
-            active_rocks.push_back(new_rock);
+            new_rock.position = camera_position_c; // Posicao inicial
+            new_rock.direction = glm::normalize(glm::vec3(camera_view_vector)); // Atira para onde player esta olhando
+            active_rocks.push_back(new_rock); // Bota no vetor de pedras ativas
             shoot_rock = false; // Resetar o estado do botão
         }
 
@@ -672,18 +672,14 @@ int main(int argc, char* argv[])
                 turnAux = 0.0f;
         }
 
-        glm::vec4 birdPosition = BezierCurve(bezierP0, bezierP1, bezierP2, bezierP3, interval);
+        glm::vec4 birdPosition = BezierCurve(bezierP0, bezierP1, bezierP2, bezierP3, interval); // Passaro com curva de bezier
 
-        model = Matrix_Translate(birdPosition.x,0.88f,birdPosition.z)
+        model = Matrix_Translate(birdPosition.x,0.88f,birdPosition.z) // Desenha passaro
                 * Matrix_Scale(0.05f,0.05f,0.05f)
                 * Matrix_Rotate_Y(turnAux);
         glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
         glUniform1i(object_id_uniform, BIRD);
         DrawVirtualObject("Bird");
-
-        model = Matrix_Translate(0.8f, -0.8f, 0.0f) * Matrix_Rotate_Y(3.14159265*-0.89) * Matrix_Rotate_X(3.14159265*-0.05) * Matrix_Scale(2.0f, 2.0f, 1.0f);
-        glm::mat4 weapon_view = Matrix_Identity();
-        glm::mat4 weapon_projection = Matrix_Identity();
 
         // Imprimimos na tela informação sobre o número de quadros renderizados
         // por segundo (frames per second).
@@ -703,7 +699,7 @@ int main(int argc, char* argv[])
         // pela biblioteca GLFW.
         glfwPollEvents();
 
-        previousTime = currentTime;
+        previousTime = currentTime; // Para animacao
     }
 
     // Finalizamos o uso dos recursos do sistema operacional
