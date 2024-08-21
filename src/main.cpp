@@ -183,7 +183,6 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 void CursorPosCallback(GLFWwindow* window, double xpos, double ypos);
 void ScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
-void TextRendering_ShowPaused(GLFWwindow* window);
 
 glm::vec4 BezierCurve(glm::vec4 bezierP0,glm::vec4 bezierP1,glm::vec4 bezierP2,glm::vec4 bezierP3, float t);
 
@@ -219,7 +218,6 @@ bool W_pressed = false;
 bool A_pressed = false;
 bool S_pressed = false;
 bool D_pressed = false;
-bool isPaused = false;
 
 // Variáveis que definem a câmera em coordenadas esféricas, controladas pelo
 // usuário através do mouse (veja função CursorPosCallback()). A posição
@@ -252,6 +250,9 @@ float monster_speed = 0.1f; // Velocidade do monstro
 bool shoot_rock = false;
 std::list<Rock> active_rocks;
 float rock_speed = 5.0f; // Velocidade da pedra
+
+glm::vec4 camera_lookat_l = glm::vec4(0.0f,0.0f,0.0f,1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
+bool g_UseLookAtCamera = false;
 
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint vertex_shader_id;
@@ -406,9 +407,7 @@ int main(int argc, char* argv[])
     glFrontFace(GL_CCW);
 
     float camera_speed = 0.5f;
-    //float previousTime = (float)glfwGetTime();
     glm::vec4 camera_position_c  = glm::vec4(0.0f,-0.88f,0.0f,1.0f);
-    //glm::vec4 camera_position_c    = glm::vec4(0.0f,0.0f,0.0f,1.0f); // Ponto "l", para onde a câmera (look-at) estará sempre olhando
     glm::vec4 camera_view_vector = glm::vec4(x_posi, 2.5f, z_posi, 1.0f) - glm::vec4(62.26f, 15.0f, -49.71f, 1.0f);
     glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f);
 
@@ -499,194 +498,196 @@ int main(int argc, char* argv[])
         currentTime = glfwGetTime();
         deltaT = currentTime - previousTime;
 
-        if (!isPaused)
-        {
-            // Pedimos para a GPU utilizar o programa de GPU criado acima (contendo
-            // os shaders de vértice e fragmentos).
-//            glUseProgram(GpuProgramID);
+        // Pedimos para a GPU utilizar o programa de GPU criado acima (contendo
+        // os shaders de vértice e fragmentos).
+        //            glUseProgram(GpuProgramID);
 
-            ant_x1 = x_posi;
-            ant_z1 = z_posi;
+        ant_x1 = x_posi;
+        ant_z1 = z_posi;
 
-            // Computamos a posição da câmera utilizando coordenadas esféricas.  As
-            // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
-            // controladas pelo mouse do usuário. Veja as funções CursorPosCallback()
-            // e ScrollCallback().
-            float r = g_CameraDistance;
-            float y = r*sin(g_CameraPhi);
-            float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
-            float x = r*cos(g_CameraPhi)*sin(g_CameraTheta);
+        // Computamos a posição da câmera utilizando coordenadas esféricas.  As
+        // variáveis g_CameraDistance, g_CameraPhi, e g_CameraTheta são
+        // controladas pelo mouse do usuário. Veja as funções CursorPosCallback()
+        // e ScrollCallback().
+        float r = g_CameraDistance;
+        float y = r*sin(g_CameraPhi);
+        float z = r*cos(g_CameraPhi)*cos(g_CameraTheta);
+        float x = r*cos(g_CameraPhi)*sin(g_CameraTheta);
 
-            for (int i = 0; i < num_monsters; i++) {
-                glm::vec3 direction = glm::normalize(glm::vec3(x_posi, -0.88f, z_posi) - monster_positions[i]);
-                monster_positions[i] += direction * monster_speed * deltaT;
+        for (int i = 0; i < num_monsters; i++) {
+            glm::vec3 direction = glm::normalize(glm::vec3(x_posi, -0.88f, z_posi) - monster_positions[i]);
+            monster_positions[i] += direction * monster_speed * deltaT;
 
-                float angle = atan2(direction.x, direction.z);
+            float angle = atan2(direction.x, direction.z);
 
-                angle += glm::radians(90.0f);
+            angle += glm::radians(90.0f);
 
-                // Verifica se o jogador colidiu com o monstro
-                if (CuboCubo(glm::vec4(x_posi, -0.88f, z_posi, 1.0f), g_VirtualScene["the_monster"], monster_positions[i], 0.1f, 0.1f, 0.1f)) {
-                    // Fecha o jogo se houver colisão
-                    glfwSetWindowShouldClose(window, GL_TRUE);
-                }
-
-                // Desenhar o monstro na posição atual
-                glm::mat4 model = Matrix_Translate(monster_positions[i].x, monster_positions[i].y, monster_positions[i].z)
-                                * Matrix_Rotate_Y(angle) // Aplica a rotação no eixo Y
-                                * Matrix_Scale(0.1f, 0.1f, 0.1f); // Escala do monstro
-                glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-                glUniform1i(object_id_uniform, MONSTER);
-                DrawVirtualObject("the_monster");
+            // Verifica se o jogador colidiu com o monstro
+            if (CuboCubo(glm::vec4(x_posi, -0.88f, z_posi, 1.0f), g_VirtualScene["the_monster"], monster_positions[i], 0.1f, 0.1f, 0.1f)) {
+                // Fecha o jogo se houver colisão
+                glfwSetWindowShouldClose(window, GL_TRUE);
             }
 
-            camera_position_c = ControlKeys(window, x, -0.88f, z);
-            camera_view_vector = glm::vec4(x, y, z, 0.0f);
-
-            glm::mat4 view = Matrix_Camera_View(camera_position_c,
-                                            camera_view_vector,
-                                            camera_up_vector);
-
-            // Agora computamos a matriz de Projeção.
-            glm::mat4 projection;
-
-            // Note que, no sistema de coordenadas da câmera, os planos near e far
-            // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
-            float nearplane = -0.1f;  // Posição do "near plane"
-            float farplane  = -10.0f; // Posição do "far plane"
-
-            // Projeção Perspectiva.
-            // Para definição do field of view (FOV), veja slides 205-215 do documento Aula_09_Projecoes.pdf.
-            float field_of_view = 3.141592 / 3.0f;
-            projection = Matrix_Perspective(field_of_view, g_ScreenRatio, nearplane, farplane);
-
-            glUniformMatrix4fv(view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
-            glUniformMatrix4fv(projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
-
-            glm::mat4 model = Matrix_Identity(); // Transformação identidade de modelagem
-
-            model = Matrix_Translate(0.0f,-1.1f,0.0f);
-            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-            glUniform1i(object_id_uniform, PLANE);
-            DrawVirtualObject("the_plane");
-
-            for(int i=0; i<tree; i++){
-                model = Matrix_Translate(position_tree[i].x, -1.1f, position_tree[i].z)
-                * Matrix_Scale(0.1f, 0.1f, 0.1f);
-                glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-                glUniform1i(object_id_uniform, TREE);
-                DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
-
-                if(CuboCubo(camera_position_c, g_VirtualScene["Tree_Spruce_small_01_Cylinder_016"], position_tree[i],0.01f, 3.5f, 0.4f)){
-                    x_posi = ant_x1;
-                    z_posi = ant_z1;
-                }
-           }
-
-            for(int i=0; i<tree; i++){
-                model = Matrix_Translate(position_tree2[i].x, -1.1f, position_tree2[i].z)
-                * Matrix_Scale(0.1f, 0.1f, 0.1f);
-                glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
-                glUniform1i(object_id_uniform, TREE2);
-                DrawVirtualObject("Default");
-
-                if (CuboCilindro(camera_position_c, g_VirtualScene["Default"], position_tree2[i], 0.4f)) {
-                    x_posi = ant_x1;
-                    z_posi = ant_z1;
-                }
-           }
-
-           if (shoot_rock)
-            {
-                Rock new_rock;
-                new_rock.position = camera_position_c;
-                new_rock.direction = glm::normalize(glm::vec3(camera_view_vector));
-                active_rocks.push_back(new_rock);
-                shoot_rock = false; // Resetar o estado do botão
-            }
-
-            // Atualizar a posição das pedras e verificar colisão com monstros
-            for (auto it = active_rocks.begin(); it != active_rocks.end();)
-            {
-                // Atualizar a posição da pedra
-                it->position += glm::vec4(it->direction, 0.0f) * rock_speed * deltaT;
-
-                // Verificar colisão com monstros
-                bool rock_removed = false;
-                for (int i = 0; i < num_monsters; i++)
-                {
-                    if (PontoCubo(it->position, g_VirtualScene["the_monster"], monster_positions[i], 0.1f, 0.1f))
-                    {
-                        // Remover o monstro
-                        monster_positions.erase(monster_positions.begin() + i);
-                        num_monsters--;
-                        rock_removed = true;
-                        break;
-                    }
-                }
-
-                // Remover a pedra se colidiu com um monstro ou saiu do limite
-                if (rock_removed || glm::length(it->position) > 100.0f)
-                {
-                    it = active_rocks.erase(it);
-                }
-                else
-                {
-                    // Desenhar a pedra
-                    glm::mat4 model = Matrix_Translate(it->position.x, it->position.y, it->position.z)
-                                    * Matrix_Scale(0.01f, 0.01f, 0.01f);
-                    glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-                    glUniform1i(object_id_uniform, ROCK);
-                    DrawVirtualObject("the_rock");
-
-                    ++it;
-                }
-            }
-
-            float interval = sin(currentTime*0.2f);
-            float turnAux, turnAux2 = PI;
-
-            if(interval < 0.0f)
-                interval *= -1.0f;
-
-            float turn = interval - previous_interval;
-
-            if(turn < 0.0f){
-            turnAux2 = 0.0f;
-            if((interval > 0.0) && (interval < 0.07))
-                turnAux =  PI;
-            if((interval > 0.2) && (interval < 0.5))
-                turnAux =  0.0f ;
-            else if ((interval > 0.5) && (interval < 1.0))
-                turnAux = PI;
-            }
-            else{
-               if((interval > 0.0) && (interval < 0.5))
-                 turnAux =  PI;
-                else if ((interval > 0.5) && (interval < 1.0))
-                  turnAux = 0.0f;
-            }
-
-            glm::vec4 birdPosition = BezierCurve(bezierP0, bezierP1, bezierP2, bezierP3, interval);
-
-            model = Matrix_Translate(birdPosition.x,0.88f,birdPosition.z)
-                 * Matrix_Scale(0.05f,0.05f,0.05f)
-                 * Matrix_Rotate_Y(turnAux);
+            // Desenhar o monstro na posição atual
+            glm::mat4 model = Matrix_Translate(monster_positions[i].x, monster_positions[i].y, monster_positions[i].z)
+                            * Matrix_Rotate_Y(angle) // Aplica a rotação no eixo Y
+                            * Matrix_Scale(0.1f, 0.1f, 0.1f); // Escala do monstro
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-            glUniform1i(object_id_uniform, BIRD);
-            DrawVirtualObject("Bird");
+            glUniform1i(object_id_uniform, MONSTER);
+            DrawVirtualObject("the_monster");
+        }
 
-           model = Matrix_Translate(0.8f, -0.8f, 0.0f) * Matrix_Rotate_Y(3.14159265*-0.89) * Matrix_Rotate_X(3.14159265*-0.05) * Matrix_Scale(2.0f, 2.0f, 1.0f);
-            glm::mat4 weapon_view = Matrix_Identity();
-            glm::mat4 weapon_projection = Matrix_Identity();
-
-            // Imprimimos na tela informação sobre o número de quadros renderizados
-            // por segundo (frames per second).
-            TextRendering_ShowFramesPerSecond(window);
-
+        if (g_UseLookAtCamera)
+        {
+            camera_position_c = glm::vec4(x,y,z,1.0f);
+            camera_view_vector = glm::normalize(camera_lookat_l - camera_position_c);
         }
         else
-            TextRendering_ShowPaused(window);
+        {
+            camera_position_c = ControlKeys(window, x, -0.88f, z);
+            camera_view_vector = glm::vec4(x, y, z, 0.0f);
+        }
+
+        glm::mat4 view = Matrix_Camera_View(camera_position_c,
+                                        camera_view_vector,
+                                        camera_up_vector);
+
+        // Agora computamos a matriz de Projeção.
+        glm::mat4 projection;
+
+        // Note que, no sistema de coordenadas da câmera, os planos near e far
+        // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
+        float nearplane = -0.1f;  // Posição do "near plane"
+        float farplane  = -10.0f; // Posição do "far plane"
+
+        // Projeção Perspectiva.
+        // Para definição do field of view (FOV), veja slides 205-215 do documento Aula_09_Projecoes.pdf.
+        float field_of_view = 3.141592 / 3.0f;
+        projection = Matrix_Perspective(field_of_view, g_ScreenRatio, nearplane, farplane);
+
+        glUniformMatrix4fv(view_uniform       , 1 , GL_FALSE , glm::value_ptr(view));
+        glUniformMatrix4fv(projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
+
+        glm::mat4 model = Matrix_Identity(); // Transformação identidade de modelagem
+
+        model = Matrix_Translate(0.0f,-1.1f,0.0f);
+        glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+        glUniform1i(object_id_uniform, PLANE);
+        DrawVirtualObject("the_plane");
+
+        for(int i=0; i<tree; i++){
+            model = Matrix_Translate(position_tree[i].x, -1.1f, position_tree[i].z)
+            * Matrix_Scale(0.1f, 0.1f, 0.1f);
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE);
+            DrawVirtualObject("Tree_Spruce_small_01_Cylinder_016");
+
+            if(CuboCubo(camera_position_c, g_VirtualScene["Tree_Spruce_small_01_Cylinder_016"], position_tree[i],0.01f, 3.5f, 0.4f)){
+                x_posi = ant_x1;
+                z_posi = ant_z1;
+            }
+        }
+
+        for(int i=0; i<tree; i++){
+            model = Matrix_Translate(position_tree2[i].x, -1.1f, position_tree2[i].z)
+            * Matrix_Scale(0.1f, 0.1f, 0.1f);
+            glUniformMatrix4fv(model_uniform, 1 , GL_FALSE , glm::value_ptr(model));
+            glUniform1i(object_id_uniform, TREE2);
+            DrawVirtualObject("Default");
+
+            if (CuboCilindro(camera_position_c, g_VirtualScene["Default"], position_tree2[i], 0.4f)) {
+                x_posi = ant_x1;
+                z_posi = ant_z1;
+            }
+        }
+
+        if (shoot_rock)
+        {
+            Rock new_rock;
+            new_rock.position = camera_position_c;
+            new_rock.direction = glm::normalize(glm::vec3(camera_view_vector));
+            active_rocks.push_back(new_rock);
+            shoot_rock = false; // Resetar o estado do botão
+        }
+
+        // Atualizar a posição das pedras e verificar colisão com monstros
+        for (auto it = active_rocks.begin(); it != active_rocks.end();)
+        {
+            // Atualizar a posição da pedra
+            it->position += glm::vec4(it->direction, 0.0f) * rock_speed * deltaT;
+
+            // Verificar colisão com monstros
+            bool rock_removed = false;
+            for (int i = 0; i < num_monsters; i++)
+            {
+                if (PontoCubo(it->position, g_VirtualScene["the_monster"], monster_positions[i], 0.1f, 0.1f))
+                {
+                    // Remover o monstro
+                    monster_positions.erase(monster_positions.begin() + i);
+                    num_monsters--;
+                    rock_removed = true;
+                    break;
+                }
+            }
+
+            // Remover a pedra se colidiu com um monstro ou saiu do limite
+            if (rock_removed || glm::length(it->position) > 100.0f)
+            {
+                it = active_rocks.erase(it);
+            }
+            else
+            {
+                // Desenhar a pedra
+                glm::mat4 model = Matrix_Translate(it->position.x, it->position.y, it->position.z)
+                                * Matrix_Scale(0.01f, 0.01f, 0.01f);
+                glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+                glUniform1i(object_id_uniform, ROCK);
+                DrawVirtualObject("the_rock");
+
+                ++it;
+            }
+        }
+
+        float interval = sin(currentTime*0.2f);
+        float turnAux, turnAux2 = PI;
+
+        if(interval < 0.0f)
+            interval *= -1.0f;
+
+        float turn = interval - previous_interval;
+
+        if(turn < 0.0f){
+        turnAux2 = 0.0f;
+        if((interval > 0.0) && (interval < 0.07))
+            turnAux =  PI;
+        if((interval > 0.2) && (interval < 0.5))
+            turnAux =  0.0f ;
+        else if ((interval > 0.5) && (interval < 1.0))
+            turnAux = PI;
+        }
+        else{
+            if((interval > 0.0) && (interval < 0.5))
+                turnAux =  PI;
+            else if ((interval > 0.5) && (interval < 1.0))
+                turnAux = 0.0f;
+        }
+
+        glm::vec4 birdPosition = BezierCurve(bezierP0, bezierP1, bezierP2, bezierP3, interval);
+
+        model = Matrix_Translate(birdPosition.x,0.88f,birdPosition.z)
+                * Matrix_Scale(0.05f,0.05f,0.05f)
+                * Matrix_Rotate_Y(turnAux);
+        glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+        glUniform1i(object_id_uniform, BIRD);
+        DrawVirtualObject("Bird");
+
+        model = Matrix_Translate(0.8f, -0.8f, 0.0f) * Matrix_Rotate_Y(3.14159265*-0.89) * Matrix_Rotate_X(3.14159265*-0.05) * Matrix_Scale(2.0f, 2.0f, 1.0f);
+        glm::mat4 weapon_view = Matrix_Identity();
+        glm::mat4 weapon_projection = Matrix_Identity();
+
+        // Imprimimos na tela informação sobre o número de quadros renderizados
+        // por segundo (frames per second).
+        TextRendering_ShowFramesPerSecond(window);
 
         // O framebuffer onde OpenGL executa as operações de renderização não
         // é o mesmo que está sendo mostrado para o usuário, caso contrário
@@ -1342,7 +1343,6 @@ void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 // cima da janela OpenGL.
 void CursorPosCallback(GLFWwindow* window, double xpos, double ypos)
 {
-    if (isPaused) return;
 
     static bool firstMouse = true;
     static double lastX = 400, lastY = 300; // Assumindo que a janela inicia com 800x600
@@ -1456,13 +1456,11 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
         ;
     }
 
-    // Se o usuário pressionar a tecla ESC, fechamos a janela.
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+        g_UseLookAtCamera = !g_UseLookAtCamera;
+
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        isPaused = !isPaused;
-        if(isPaused)
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        else
-            glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
 // Definimos o callback para impressão de erros da GLFW no terminal
@@ -1766,20 +1764,6 @@ void PrintObjModelInfo(ObjModel* model)
     }
     printf("\n");
   }
-}
-
-void TextRendering_ShowPaused(GLFWwindow* window)
-{
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-
-    float x = width / 2.0f;
-    float y = height / 2.0f;
-    float scale = 2.0f; // Tamanho do texto
-
-    std::string paused_text = "Paused";
-    float text_width = paused_text.length() * TextRendering_CharWidth(window) * scale;
-    TextRendering_PrintString(window, paused_text, (x - text_width / 2) / width * 2 - 1, (y - TextRendering_LineHeight(window) * scale / 2) / height * 2 - 1, scale);
 }
 
 
